@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://user-images.githubusercontent.com/1342803/36584965-e2ed247e-1849-11e8-80c0-adbcef26cc4c.png" height="64" alt="Fluent SQLite">
+    <img src="https://user-images.githubusercontent.com/1342803/36623069-9e1f049e-18cf-11e8-99ee-5bf317486191.png" height="64" alt="Fluent SQLite">
     <br>
     <br>
     <a href="http://docs.vapor.codes/3.0/fluent/getting-started/">

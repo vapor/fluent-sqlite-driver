@@ -1,0 +1,70 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Async",
+        "repositoryURL": "https://github.com/vapor/async.git",
+        "state": {
+          "branch": null,
+          "revision": "887ddb41af15a39c3e47b9e0b207aa8efd8bafc3",
+          "version": "1.0.0-rc.1"
+        }
+      },
+      {
+        "package": "Console",
+        "repositoryURL": "https://github.com/vapor/console.git",
+        "state": {
+          "branch": null,
+          "revision": "26812edd1d4af8129d194ee25483159b92fed4d5",
+          "version": "3.0.0-rc.1"
+        }
+      },
+      {
+        "package": "Core",
+        "repositoryURL": "https://github.com/vapor/core.git",
+        "state": {
+          "branch": null,
+          "revision": "086a41eeeb2c97e53002950ae3b65b365759b66b",
+          "version": "3.0.0-rc.1"
+        }
+      },
+      {
+        "package": "DatabaseKit",
+        "repositoryURL": "https://github.com/vapor/database-kit.git",
+        "state": {
+          "branch": null,
+          "revision": "5f247a63f392d260cc7c8e9b916131a67f73dbe4",
+          "version": "1.0.0-rc.1"
+        }
+      },
+      {
+        "package": "Fluent",
+        "repositoryURL": "https://github.com/vapor/fluent.git",
+        "state": {
+          "branch": null,
+          "revision": "d584c55eadbfe14cda60ccf74e6f5a81401f71ee",
+          "version": "3.0.0-rc.1"
+        }
+      },
+      {
+        "package": "Service",
+        "repositoryURL": "https://github.com/vapor/service.git",
+        "state": {
+          "branch": null,
+          "revision": "90426d62cf1b028c0eef8285cb0293b527e45393",
+          "version": "1.0.0-rc.1"
+        }
+      },
+      {
+        "package": "SQLite",
+        "repositoryURL": "https://github.com/vapor/sqlite.git",
+        "state": {
+          "branch": null,
+          "revision": "951e4f128d15a8a49e009fcf7a49f8e66e189eb7",
+          "version": "3.0.0-rc.1"
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -51,7 +51,7 @@
         "repositoryURL": "https://github.com/vapor/sqlite.git",
         "state": {
           "branch": "nio",
-          "revision": "7339d81595e1f489663f06fc158880503588c2fb",
+          "revision": "90e2c626c4def5dc810ef5e08e7a4581184016af",
           "version": null
         }
       },

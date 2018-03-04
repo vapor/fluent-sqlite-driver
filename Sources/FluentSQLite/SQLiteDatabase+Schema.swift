@@ -24,17 +24,20 @@ extension SQLiteDatabase: SchemaSupporting {
             return connection.query(string: string).run().flatMap(to: Void.self) {
                 /// handle indexes as separate query
                 var indexFutures: [Future<Void>] = []
+                
                 for addIndex in schema.addIndexes {
                     let fields = addIndex.fields.map { "`\($0.name)`" }.joined(separator: ", ")
                     let name = addIndex.sqliteName(for: schema.entity)
                     let add = connection.query(string: "CREATE \(addIndex.isUnique ? "UNIQUE " : "")INDEX `\(name)` ON `\(schema.entity)` (\(fields))").run()
                     indexFutures.append(add)
                 }
+
                 for removeIndex in schema.removeIndexes {
                     let name = removeIndex.sqliteName(for: schema.entity)
                     let remove = connection.query(string: "DROP INDEX `\(name)`").run()
                     indexFutures.append(remove)
                 }
+
                 return indexFutures.flatten(on: connection)
             }
         }

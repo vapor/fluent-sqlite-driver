@@ -7,13 +7,11 @@ import XCTest
 
 final class SQLiteBenchmarkTests: XCTestCase {
     var benchmarker: Benchmarker<SQLiteDatabase>!
-    var worker: EventLoop!
 
     override func setUp() {
-        self.worker = try! DefaultEventLoop(label: "codes.vapor.fluent.test.sqlite")
-        Thread.async { self.worker.runLoop() }
         let database = try! SQLiteDatabase(storage: .memory)
-        benchmarker = Benchmarker(database, on: worker, onFail: XCTFail)
+        let group = MultiThreadedEventLoopGroup(numThreads: 1)
+        benchmarker = Benchmarker(database, on: group, onFail: XCTFail)
     }
 
     func testSchema() throws {

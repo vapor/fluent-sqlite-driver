@@ -5,28 +5,24 @@ import SQLite
 extension SQLiteDatabase: TransactionSupporting {
     /// See TransactionSupporting.execute
     public static func execute(transaction: DatabaseTransaction<SQLiteDatabase>, on connection: SQLiteConnection) -> Future<Void> {
-        let promise = Promise(Void.self)
+        let promise = connection.eventLoop.newPromise(Void.self)
 
-        connection.query(string: "BEGIN TRANSACTION").execute().do { results in
-            assert(results == nil)
+        connection.query(string: "BEGIN TRANSACTION").run().do { _ in
             transaction.run(on: connection).do {
-                connection.query(string: "COMMIT TRANSACTION")
-                    .execute()
-                    .map(to: Void.self) { results in
-                        assert(results == nil)
-                    }
-                    .chain(to: promise)
+                connection.query(string: "COMMIT TRANSACTION").run().chain(to: promise)
             }.catch { err in
-                connection.query(string: "ROLLBACK TRANSACTION").execute().do { query in
+                connection.query(string: "ROLLBACK TRANSACTION").run().do { query in
                     // still fail even tho rollback succeeded
-                    promise.fail(err)
+                    promise.fail(error: err)
                 }.catch { err in
                     print("Rollback failed") // fixme: combine errors here
-                    promise.fail(err)
+                    promise.fail(error: err)
                 }
             }
-        }.catch(promise.fail)
+        }.catch { error in
+            promise.fail(error: error)
+        }
 
-        return promise.future
+        return promise.futureResult
     }
 }

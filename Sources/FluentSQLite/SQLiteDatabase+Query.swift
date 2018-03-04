@@ -7,12 +7,12 @@ import SQL
 
 extension SQLiteDatabase: QuerySupporting {
     /// See QuerySupporting.execute
-    public static func execute<I, D>(
+    public static func execute<D>(
         query: DatabaseQuery<SQLiteDatabase>,
-        into stream: I,
+        into handler: @escaping (D, SQLiteConnection) throws -> (),
         on connection: SQLiteConnection
-    ) where I: Async.InputStream, D: Decodable, D == I.Input {
-        do {
+    ) -> EventLoopFuture<Void> where D: Decodable {
+        return Future.flatMap(on: connection) {
             /// convert fluent query to sql query
             var (dataQuery, binds) = query.makeDataQuery()
 
@@ -46,28 +46,11 @@ extension SQLiteDatabase: QuerySupporting {
                 try sqliteQuery.bind(DataEncoder.makeSQLiteData(bind))
             }
 
-            /// setup drain
-            /// BLOCKING
-            sqliteQuery.execute().do { results in
-                if let results = results {
-                    /// there are results to be streamed
-                    let resultStream = results.stream()
-                    resultStream.map(to: D.self) { row in
-                        let decoder = SQLiteRowDecoder(row: row)
-                        let model = try D(from: decoder)
-                        return model
-                    }.output(to: stream)
-                    resultStream.start()
-                } else {
-                    stream.close()
-                }
-            }.catch { error in
-                stream.error(error)
-                stream.close()
+            return sqliteQuery.run { row, query in
+                let decoder = SQLiteRowDecoder(row: row)
+                let model = try D(from: decoder)
+                try handler(model, connection)
             }
-        } catch {
-            stream.error(error)
-            stream.close()
         }
     }
 
@@ -92,7 +75,7 @@ extension SQLiteDatabase: QuerySupporting {
         default: break
         }
 
-        return Future(copy)
+        return Future.map(on: connection) { copy }
     }
 }
 

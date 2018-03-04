@@ -7,7 +7,7 @@ import SQLite
 extension SQLiteDatabase: SchemaSupporting {
     /// See SchemaExecutor.execute()
     public static func execute(schema: DatabaseSchema<SQLiteDatabase>, on connection: SQLiteConnection) -> Future<Void> {
-        return Future.flatMap {
+        return Future.flatMap(on: connection) {
             guard schema.removeReferences.count <= 0 else {
                 throw FluentSQLiteError(
                     identifier: "unsupported",
@@ -21,27 +21,21 @@ extension SQLiteDatabase: SchemaSupporting {
             let string = SQLiteSQLSerializer()
                 .serialize(schema: schemaQuery)
 
-            return connection.query(string: string).execute().map(to: Void.self) { results in
-                assert(results == nil)
-            }.flatMap(to: Void.self) {
+            return connection.query(string: string).run().flatMap(to: Void.self) {
                 /// handle indexes as separate query
                 var indexFutures: [Future<Void>] = []
                 for addIndex in schema.addIndexes {
                     let fields = addIndex.fields.map { "`\($0.name)`" }.joined(separator: ", ")
                     let name = addIndex.sqliteName(for: schema.entity)
-                    let add = connection.query(string: "CREATE \(addIndex.isUnique ? "UNIQUE " : "")INDEX `\(name)` ON `\(schema.entity)` (\(fields))").execute().map(to: Void.self) { results in
-                        assert(results == nil)
-                    }
+                    let add = connection.query(string: "CREATE \(addIndex.isUnique ? "UNIQUE " : "")INDEX `\(name)` ON `\(schema.entity)` (\(fields))").run()
                     indexFutures.append(add)
                 }
                 for removeIndex in schema.removeIndexes {
                     let name = removeIndex.sqliteName(for: schema.entity)
-                    let remove = connection.query(string: "DROP INDEX `\(name)`").execute().map(to: Void.self) { results in
-                        assert(results == nil)
-                    }
+                    let remove = connection.query(string: "DROP INDEX `\(name)`").run()
                     indexFutures.append(remove)
                 }
-                return indexFutures.flatten()
+                return indexFutures.flatten(on: connection)
             }
         }
     }

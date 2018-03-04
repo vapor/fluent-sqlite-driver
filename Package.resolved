@@ -2,66 +2,75 @@
   "object": {
     "pins": [
       {
-        "package": "Async",
-        "repositoryURL": "https://github.com/vapor/async.git",
-        "state": {
-          "branch": null,
-          "revision": "887ddb41af15a39c3e47b9e0b207aa8efd8bafc3",
-          "version": "1.0.0-rc.1"
-        }
-      },
-      {
         "package": "Console",
         "repositoryURL": "https://github.com/vapor/console.git",
         "state": {
-          "branch": null,
-          "revision": "26812edd1d4af8129d194ee25483159b92fed4d5",
-          "version": "3.0.0-rc.1"
+          "branch": "nio",
+          "revision": "9fc7ee2bd766b8f0141195eff9e25078022c6c40",
+          "version": null
         }
       },
       {
         "package": "Core",
         "repositoryURL": "https://github.com/vapor/core.git",
         "state": {
-          "branch": null,
-          "revision": "086a41eeeb2c97e53002950ae3b65b365759b66b",
-          "version": "3.0.0-rc.1"
+          "branch": "nio",
+          "revision": "bc1e6366c67e70e07cecd5647f7391ddd90a2e1f",
+          "version": null
         }
       },
       {
         "package": "DatabaseKit",
         "repositoryURL": "https://github.com/vapor/database-kit.git",
         "state": {
-          "branch": null,
-          "revision": "5f247a63f392d260cc7c8e9b916131a67f73dbe4",
-          "version": "1.0.0-rc.1"
+          "branch": "nio",
+          "revision": "762b8f51ba343bdd080e70218854e8f49a2f9711",
+          "version": null
         }
       },
       {
         "package": "Fluent",
         "repositoryURL": "https://github.com/vapor/fluent.git",
         "state": {
-          "branch": null,
-          "revision": "d584c55eadbfe14cda60ccf74e6f5a81401f71ee",
-          "version": "3.0.0-rc.1"
+          "branch": "nio",
+          "revision": "c26dc6ccf4f007cdbedda582a7d8b7c1341da1a6",
+          "version": null
         }
       },
       {
         "package": "Service",
         "repositoryURL": "https://github.com/vapor/service.git",
         "state": {
-          "branch": null,
-          "revision": "90426d62cf1b028c0eef8285cb0293b527e45393",
-          "version": "1.0.0-rc.1"
+          "branch": "nio",
+          "revision": "d51d6d00c77e1032ba6ae425f3330da9455852d8",
+          "version": null
         }
       },
       {
         "package": "SQLite",
         "repositoryURL": "https://github.com/vapor/sqlite.git",
         "state": {
+          "branch": "nio",
+          "revision": "7339d81595e1f489663f06fc158880503588c2fb",
+          "version": null
+        }
+      },
+      {
+        "package": "swift-nio",
+        "repositoryURL": "https://github.com/apple/swift-nio.git",
+        "state": {
           "branch": null,
-          "revision": "951e4f128d15a8a49e009fcf7a49f8e66e189eb7",
-          "version": "3.0.0-rc.1"
+          "revision": "4fb0cc68fee45d2ae714484b5979316943ef1f24",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "package": "swift-nio-zlib-support",
+        "repositoryURL": "https://github.com/apple/swift-nio-zlib-support.git",
+        "state": {
+          "branch": null,
+          "revision": "37760e9a52030bb9011972c5213c3350fa9d41fd",
+          "version": "1.0.0"
         }
       }
     ]

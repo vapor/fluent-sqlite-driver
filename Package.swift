@@ -8,16 +8,16 @@ let package = Package(
     ],
     dependencies: [
         // 🌎 Utility package containing tools for byte manipulation, Codable, OS APIs, and debugging.
-        .package(url: "https://github.com/vapor/core.git", .branch("nio")),
+        .package(url: "https://github.com/vapor/core.git", .branch("master")),
         
         // ✳️ Swift ORM framework (queries, models, and relations) for building NoSQL and SQL database integrations.
-        .package(url: "https://github.com/vapor/fluent.git", .branch("nio")),
+        .package(url: "https://github.com/vapor/fluent.git", .branch("master")),
 
         // 📦 Dependency injection / inversion of control framework.
-        .package(url: "https://github.com/vapor/service.git", .branch("nio")),
+        .package(url: "https://github.com/vapor/service.git", .branch("master")),
 
         // 🔵 SQLite 3 wrapper for Swift
-        .package(url: "https://github.com/vapor/sqlite.git", .branch("nio")),
+        .package(url: "https://github.com/vapor/sqlite.git", .branch("master")),
     ],
     targets: [
         .target(name: "FluentSQLite", dependencies: ["Async", "Fluent", "FluentSQL", "Service", "SQLite"]),

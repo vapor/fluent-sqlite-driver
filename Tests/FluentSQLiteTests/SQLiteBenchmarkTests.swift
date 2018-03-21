@@ -86,6 +86,10 @@ final class SQLiteBenchmarkTests: XCTestCase {
         try benchmarker.benchmarkIndexSupporting_withSchema()
     }
 
+    func testContains() throws {
+        try benchmarker.benchmarkContains_withSchema()
+    }
+
     static let allTests = [
         ("testSchema", testSchema),
         ("testModels", testModels),

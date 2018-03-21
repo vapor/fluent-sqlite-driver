@@ -99,6 +99,9 @@ extension SQLiteDatabase: QuerySupporting {
             return .null
         }
     }
+
+    /// See `QuerySupporting.QueryFilter`
+    public typealias QueryFilter = DataPredicateComparison
 }
 
 extension SQLiteData: FluentData { }

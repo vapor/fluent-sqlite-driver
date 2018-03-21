@@ -1,3 +1,4 @@
+import Async
 import Service
 import SQLite
 
@@ -19,7 +20,7 @@ public final class FluentSQLiteProvider: Provider {
             return SQLiteConfig()
         }
         services.register(SQLiteDatabase.self) { container -> SQLiteDatabase in
-            let storage = try container.make(SQLiteStorage.self, for: FluentSQLiteProvider.self)
+            let storage = try container.make(SQLiteStorage.self)
             return try SQLiteDatabase(storage: storage)
         }
         services.register(KeyedCache.self) { container -> SQLiteCache in
@@ -29,7 +30,9 @@ public final class FluentSQLiteProvider: Provider {
     }
 
     /// See Provider.boot
-    public func boot(_ container: Container) throws {}
+    public func didBoot(_ container: Container) throws -> Future<Void> {
+        return .done(on: container)
+    }
 }
 
 public typealias SQLiteCache = FluentCache<SQLiteDatabase>

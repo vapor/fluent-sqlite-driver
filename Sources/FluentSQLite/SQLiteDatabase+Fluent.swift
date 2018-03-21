@@ -95,7 +95,12 @@ extension SQLiteConnection: DatabaseConnection {
     public typealias Config = SQLiteConfig
     
     public func connect<D>(to database: DatabaseIdentifier<D>?) -> Future<D.Connection> {
-        return Future(self as! D.Connection)
+        return Future.map(on: self) {
+            guard let conn = self as? D.Connection else {
+                throw FluentSQLiteError(identifier: "connect", reason: "Could not convert \(self) to \(D.self) connection", source: .capture())
+            }
+            return conn
+        }
     }
 }
 

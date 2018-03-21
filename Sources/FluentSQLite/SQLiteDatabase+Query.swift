@@ -6,27 +6,26 @@ import SQLite
 import SQL
 
 extension SQLiteDatabase: QuerySupporting {
-    /// See QuerySupporting.execute
-    public static func execute<I, D>(
+    /// See `QuerySupporting.QueryData`
+    public typealias QueryData = SQLiteData
+
+    /// See `QuerySupporting.QueryDataConvertible`
+    public typealias QueryDataConvertible = SQLiteDataConvertible
+
+    /// See `QuerySupporting.execute`
+    public static func execute(
         query: DatabaseQuery<SQLiteDatabase>,
-        into stream: I,
+        into handler: @escaping ([QueryField : SQLiteData], SQLiteConnection) throws -> (),
         on connection: SQLiteConnection
-    ) where I: Async.InputStream, D: Decodable, D == I.Input {
-        do {
+    ) -> EventLoopFuture<Void> {
+        return Future.flatMap(on: connection) {
             /// convert fluent query to sql query
             var (dataQuery, binds) = query.makeDataQuery()
 
-            // create row encoder, will only
-            // be used if a model is being binded
-            let rowEncoder = SQLiteRowEncoder()
-
             // bind model columns to sql query
-            if let model = query.data {
-                try model.encode(to: rowEncoder)
-                rowEncoder.row.fields.forEach { key, val in
-                    let col = DataColumn(table: query.entity, name: key.name)
-                    dataQuery.columns.append(col)
-                }
+            query.data.forEach { key, val in
+                let col = DataColumn(table: query.entity, name: key.name)
+                dataQuery.columns.append(col)
             }
 
             /// create sqlite query from string
@@ -34,44 +33,28 @@ extension SQLiteDatabase: QuerySupporting {
             let sqliteQuery = connection.query(string: sqlString)
 
             /// bind model data to sqlite query
-            if query.data != nil {
-                for data in rowEncoder.row.fields.values.map({ $0.data }) {
-                    sqliteQuery.bind(data)
-                }
+            for data in query.data.values {
+                sqliteQuery.bind(data)
             }
 
             /// encode sql placeholder binds
-            let DataEncoder = SQLiteDataEncoder()
             for bind in binds {
-                try sqliteQuery.bind(DataEncoder.makeSQLiteData(bind))
+                sqliteQuery.bind(bind)
             }
 
-            /// setup drain
-            /// BLOCKING
-            sqliteQuery.execute().do { results in
-                if let results = results {
-                    /// there are results to be streamed
-                    let resultStream = results.stream()
-                    resultStream.map(to: D.self) { row in
-                        let decoder = SQLiteRowDecoder(row: row)
-                        let model = try D(from: decoder)
-                        return model
-                    }.output(to: stream)
-                    resultStream.start()
-                } else {
-                    stream.close()
+            return sqliteQuery.run { row, query in
+                var res: [QueryField: SQLiteData] = [:]
+                for (col, data) in row.fields {
+                    let field = QueryField(entity: col.table, name: col.name)
+                    res[field] = data.data
                 }
-            }.catch { error in
-                stream.error(error)
-                stream.close()
+
+                try handler(res, connection)
             }
-        } catch {
-            stream.error(error)
-            stream.close()
         }
     }
 
-    /// See QuerySupporting.modelEvent
+    /// See `QuerySupporting.modelEvent`
     public static func modelEvent<M>(
         event: ModelEvent,
         model: M,
@@ -92,30 +75,33 @@ extension SQLiteDatabase: QuerySupporting {
         default: break
         }
 
-        return Future(copy)
+        return Future.map(on: connection) { copy }
     }
-}
 
-extension SQLiteDataEncoder {
-    /// Converts a SQL bind value into SQLite data.
-    /// This method applies wildcards if necessary.
-    fileprivate func makeSQLiteData(_ bind: BindValue) throws -> SQLiteData {
-        try bind.encodable.encode(to: self)
-        switch bind.method {
-        case .plain:
-            return data
-        case .wildcard(let wildcard):
-            // FIXME: fuzzy string
-            guard let string = data.text else {
-                throw FluentSQLiteError(identifier: "wildcard", reason: "Could not convert value with wildcards to string: \(data).", source: .capture())
-            }
+    /// See `QuerySupporting.queryDataParse`
+    public static func queryDataParse<T>(_ type: T.Type, from data: SQLiteData) throws -> T? {
+        if data.isNull { return nil }
+        guard let convertibleType = T.self as? SQLiteDataConvertible.Type else {
+            throw FluentSQLiteError(identifier: "queryDataParse", reason: "Cannot parse \(T.self) from SQLiteData", source: .capture())
+        }
+        let t: T = try convertibleType.convertFromSQLiteData(data) as! T
+        return t
+    }
 
-            switch wildcard {
-            case .fullWildcard: return .text("%" + string + "%")
-            case .leadingWildcard: return .text("%" + string)
-            case .trailingWildcard: return .text(string + "%")
+    /// See `QuerySupporting.queryDataSerialize`
+    public static func queryDataSerialize<T>(data: T?) throws -> SQLiteData {
+        if let data = data {
+            guard let convertible = data as? SQLiteDataConvertible else {
+                throw FluentSQLiteError(identifier: "queryDataSerialize", reason: "Cannot serialize \(T.self) to SQLiteData", source: .capture())
             }
+            return try convertible.convertToSQLiteData()
+        } else {
+            return .null
         }
     }
+
+    /// See `QuerySupporting.QueryFilter`
+    public typealias QueryFilter = DataPredicateComparison
 }
 
+extension SQLiteData: FluentData { }

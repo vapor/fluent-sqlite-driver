@@ -90,7 +90,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
     func testContains() throws {
         try benchmarker.benchmarkContains_withSchema()
     }
-
+    
     func testSQLiteEnums() throws {
         enum PetType: Int, SQLiteEnumType {
             case cat, dog
@@ -165,6 +165,46 @@ final class SQLiteBenchmarkTests: XCTestCase {
         XCTAssertEqual(fetched?.pet.name, "Ziz")
     }
 
+    func testUUIDPivot() throws {
+        struct A: SQLiteUUIDModel, Migration {
+            var id: UUID?
+        }
+        struct B: SQLiteUUIDModel, Migration {
+            var id: UUID?
+        }
+        struct C: SQLiteUUIDPivot, Migration {
+            static var leftIDKey = \C.aID
+            static var rightIDKey = \C.bID
+
+            typealias Left = A
+            typealias Right = B
+            var id: UUID?
+            var aID: UUID
+            var bID: UUID
+        }
+
+        database.enableLogging(using: .print)
+
+        let conn = try benchmarker.pool.requestConnection().wait()
+        defer { benchmarker.pool.releaseConnection(conn) }
+
+        defer {
+            try? C.prepare(on: conn).wait()
+            try? B.prepare(on: conn).wait()
+            try? A.prepare(on: conn).wait()
+        }
+        try A.prepare(on: conn).wait()
+        try B.prepare(on: conn).wait()
+        try C.prepare(on: conn).wait()
+
+        let a = try A(id: nil).save(on: conn).wait()
+        let b = try B(id: nil).save(on: conn).wait()
+        let c = try C(id: nil, aID: a.requireID(), bID: b.requireID()).save(on: conn).wait()
+
+        let fetched = try C.find(c.requireID(), on: conn).wait()
+        XCTAssertEqual(fetched?.id, c.id)
+    }
+
     static let allTests = [
         ("testSchema", testSchema),
         ("testModels", testModels),
@@ -179,6 +219,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
         ("testReferentialActions", testReferentialActions),
         ("testMinimumViableModelDeclaration", testMinimumViableModelDeclaration),
         ("testIndexSupporting", testIndexSupporting),
+        ("testUUIDPivot", testUUIDPivot),
         ("testSQLiteEnums", testSQLiteEnums),
         ("testSQLiteJSON", testSQLiteJSON),
     ]

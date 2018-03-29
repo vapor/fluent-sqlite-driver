@@ -7,9 +7,6 @@ public protocol SQLiteModel: Model where Self.Database == SQLiteDatabase, Self.I
 
 extension SQLiteModel {
     /// See `Model`
-    public typealias ID = Int
-
-    /// See `Model`
     public static var idKey: IDKey { return \.id }
 }
 
@@ -26,9 +23,6 @@ public protocol SQLiteUUIDModel: Model where Self.Database == SQLiteDatabase, Se
 
 extension SQLiteUUIDModel {
     /// See `Model`
-    public typealias ID = UUID
-
-    /// See `Model`
     public static var idKey: IDKey { return \.id }
 }
 
@@ -44,9 +38,6 @@ public protocol SQLiteStringModel: Model where Self.Database == SQLiteDatabase, 
 }
 
 extension SQLiteStringModel {
-    /// See `Model`
-    public typealias ID = String
-
     /// See `Model`
     public static var idKey: IDKey { return \.id }
 }

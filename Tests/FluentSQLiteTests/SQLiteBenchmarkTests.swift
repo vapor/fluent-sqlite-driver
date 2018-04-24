@@ -12,7 +12,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
     override func setUp() {
         database = try! SQLiteDatabase(storage: .memory)
         let group = MultiThreadedEventLoopGroup(numThreads: 1)
-        benchmarker = Benchmarker(database, on: group, onFail: XCTFail)
+        benchmarker = try! Benchmarker(database, on: group, onFail: XCTFail)
     }
 
     func testSchema() throws {
@@ -122,7 +122,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
             var treat: FavoriteTreat
         }
 
-        database.enableLogging(using: .print)
         let conn = try benchmarker.pool.requestConnection().wait()
         defer { benchmarker.pool.releaseConnection(conn) }
 
@@ -151,7 +150,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
             var pet: Pet
         }
 
-        database.enableLogging(using: .print)
         let conn = try benchmarker.pool.requestConnection().wait()
         defer { benchmarker.pool.releaseConnection(conn) }
 
@@ -182,8 +180,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
             var aID: UUID
             var bID: UUID
         }
-
-        database.enableLogging(using: .print)
 
         let conn = try benchmarker.pool.requestConnection().wait()
         defer { benchmarker.pool.releaseConnection(conn) }

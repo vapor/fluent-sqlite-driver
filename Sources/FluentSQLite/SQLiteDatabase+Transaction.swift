@@ -9,7 +9,7 @@ extension SQLiteDatabase: TransactionSupporting {
 
         connection.query(string: "BEGIN TRANSACTION").run().do { _ in
             transaction.run(on: connection).do {
-                connection.query(string: "COMMIT TRANSACTION").run().chain(to: promise)
+                connection.query(string: "COMMIT TRANSACTION").run().cascade(promise: promise)
             }.catch { err in
                 connection.query(string: "ROLLBACK TRANSACTION").run().do { query in
                     // still fail even tho rollback succeeded

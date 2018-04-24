@@ -8,16 +8,16 @@ let package = Package(
     ],
     dependencies: [
         // 🌎 Utility package containing tools for byte manipulation, Codable, OS APIs, and debugging.
-        .package(url: "https://github.com/vapor/core.git", from: "3.0.0-rc.2"),
+        .package(url: "https://github.com/vapor/core.git", from: "3.0.0"),
         
         // ✳️ Swift ORM framework (queries, models, and relations) for building NoSQL and SQL database integrations.
         .package(url: "https://github.com/vapor/fluent.git", .branch("dbkit-gm")),
 
         // 📦 Dependency injection / inversion of control framework.
-        .package(url: "https://github.com/vapor/service.git", from: "1.0.0-rc.2"),
+        .package(url: "https://github.com/vapor/service.git", from: "1.0.0"),
 
         // 🔵 SQLite 3 wrapper for Swift
-        .package(url: "https://github.com/vapor/sqlite.git", from: "3.0.0-rc.2"),
+        .package(url: "https://github.com/vapor/sqlite.git", .branch("dbkit-gm")),
     ],
     targets: [
         .target(name: "FluentSQLite", dependencies: ["Async", "Fluent", "FluentSQL", "Service", "SQLite"]),

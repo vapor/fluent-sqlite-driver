@@ -20,26 +20,35 @@ extension SQLiteDatabase: QuerySupporting {
     ) -> EventLoopFuture<Void> {
         return Future.flatMap(on: connection) {
             /// convert fluent query to sql query
-            var (dataQuery, binds) = query.makeDataQuery()
+            var (sqlQuery, binds) = query.makeDataQuery()
+            let values: [SQLiteData]
 
-            // bind model columns to sql query
-            query.data.forEach { key, val in
-                let col = DataColumn(table: query.entity, name: key.name)
-                dataQuery.columns.append(col)
+            switch sqlQuery {
+            case .manipulation(var m):
+                // bind model columns to sql query
+                var modelData: [SQLiteData] = []
+                m.columns = query.data.map { (field, val) in
+                    modelData.append(val)
+                    let col = DataColumn(table: query.entity, name: field.name)
+                    return .init(column: col, value: .placeholder)
+                }
+                values = modelData + binds
+                sqlQuery = .manipulation(m)
+            case .query: values = binds
+            default: values = []
+            }
+
+            query.customSQL.forEach { custom in
+                custom.closure(&sqlQuery)
             }
 
             /// create sqlite query from string
-            let sqlString = SQLiteSQLSerializer().serialize(data: dataQuery)
+            let sqlString = SQLiteSQLSerializer().serialize(sqlQuery)
             let sqliteQuery = connection.query(string: sqlString)
 
-            /// bind model data to sqlite query
-            for data in query.data.values {
+            /// bind data to sqlite query
+            for data in values {
                 sqliteQuery.bind(data)
-            }
-
-            /// encode sql placeholder binds
-            for bind in binds {
-                sqliteQuery.bind(bind)
             }
 
             return sqliteQuery.run { row, query in

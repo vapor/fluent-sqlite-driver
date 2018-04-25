@@ -1,24 +1,11 @@
-import Async
-import Service
-import SQLite
-
-@available(*, unavailable, renamed: "FluentSQLiteProvider")
-public typealias SQLiteProvider = FluentSQLiteProvider
-
 /// Registers and boots SQLite services.
 public final class FluentSQLiteProvider: Provider {
-    /// See Provider.repositoryName
-    public static let repositoryName = "fluent-sqlite"
-
     /// Create a new SQLite provider.
     public init() { }
 
     /// See Provider.register
     public func register(_ services: inout Services) throws {
         try services.register(FluentProvider())
-        services.register { container in
-            return SQLiteConfig()
-        }
         services.register(SQLiteDatabase.self) { container -> SQLiteDatabase in
             let storage = try container.make(SQLiteStorage.self)
             return try SQLiteDatabase(storage: storage)
@@ -35,4 +22,5 @@ public final class FluentSQLiteProvider: Provider {
     }
 }
 
-public typealias SQLiteCache = FluentCache<SQLiteDatabase>
+public typealias SQLiteCache = DatabaseKeyedCache<ConfiguredDatabase<SQLiteDatabase>>
+extension SQLiteDatabase: KeyedCacheSupporting { }

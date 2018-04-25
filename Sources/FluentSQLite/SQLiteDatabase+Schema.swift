@@ -4,6 +4,8 @@ import FluentSQL
 import Foundation
 import SQLite
 
+extension SQLiteDatabase: CustomSQLSupporting { }
+
 extension SQLiteDatabase: SchemaSupporting {
     /// See SchemaExecutor.execute()
     public static func execute(schema: DatabaseSchema<SQLiteDatabase>, on connection: SQLiteConnection) -> Future<Void> {
@@ -18,8 +20,13 @@ extension SQLiteDatabase: SchemaSupporting {
 
             var schemaQuery = schema.makeSchemaQuery(dataTypeFactory: dataType)
             schema.applyReferences(to: &schemaQuery)
+
+            var sqlQuery: SQLQuery = .definition(schemaQuery)
+            schema.customSQL.forEach { custom in
+                custom.closure(&sqlQuery)
+            }
             let string = SQLiteSQLSerializer()
-                .serialize(schema: schemaQuery)
+                .serialize(sqlQuery)
 
             return connection.query(string: string).run().flatMap(to: Void.self) {
                 /// handle indexes as separate query

@@ -4,12 +4,12 @@ import SQLite
 
 extension SQLiteDatabase: TransactionSupporting {
     /// See TransactionSupporting.execute
-    public static func execute(transaction: DatabaseTransaction<SQLiteDatabase>, on connection: SQLiteConnection) -> Future<Void> {
-        let promise = connection.eventLoop.newPromise(Void.self)
+    public static func execute<R>(transaction: DatabaseTransaction<SQLiteDatabase, R>, on connection: SQLiteConnection) -> Future<R> {
+        let promise = connection.eventLoop.newPromise(R.self)
 
         connection.query(string: "BEGIN TRANSACTION").run().do { _ in
-            transaction.run(on: connection).do {
-                connection.query(string: "COMMIT TRANSACTION").run().chain(to: promise)
+            transaction.run(on: connection).do { result in
+                connection.query(string: "COMMIT TRANSACTION").run().transform(to: result).cascade(promise: promise)
             }.catch { err in
                 connection.query(string: "ROLLBACK TRANSACTION").run().do { query in
                     // still fail even tho rollback succeeded

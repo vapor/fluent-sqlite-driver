@@ -200,6 +200,10 @@ final class SQLiteBenchmarkTests: XCTestCase {
         let fetched = try C.find(c.requireID(), on: conn).wait()
         XCTAssertEqual(fetched?.id, c.id)
     }
+    
+    func testLifecycle() throws {
+        try benchmarker.benchmarkLifecycleHooks_withSchema()
+    }
 
     static let allTests = [
         ("testSchema", testSchema),
@@ -218,5 +222,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
         ("testUUIDPivot", testUUIDPivot),
         ("testSQLiteEnums", testSQLiteEnums),
         ("testSQLiteJSON", testSQLiteJSON),
+        ("testLifecycle", testLifecycle)
     ]
 }

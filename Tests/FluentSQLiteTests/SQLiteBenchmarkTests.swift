@@ -209,6 +209,37 @@ final class SQLiteBenchmarkTests: XCTestCase {
         let version = try conn.query("SELECT 1").wait()
         print(version)
     }
+    
+    // https://github.com/vapor/fluent-sqlite/issues/8
+    func testDefaultValues() throws {
+        struct User: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            var name: String
+            var test: String?
+            
+            static func prepare(on conn: SQLiteConnection) -> Future<Void> {
+                return SQLiteDatabase.create(User.self, on: conn) { builder in
+                    builder.field(for: \.id, primaryKey: true)
+                    builder.field(for: \.name)
+                    builder.field(for: "test", type: .init(name: "TEXT", attributes: ["DEFAULT 'foo'"]))
+                }
+            }
+            
+            static func revert(on conn: SQLiteConnection) -> Future<Void> {
+                return SQLiteDatabase.delete(User.self, on: conn)
+            }
+        }
+        
+        let conn = try benchmarker.pool.requestConnection().wait()
+        defer { benchmarker.pool.releaseConnection(conn) }
+        
+        try User.prepare(on: conn).wait()
+        defer { try! User.revert(on: conn).wait() }
+        
+        var user = User(id: nil, name: "Vapor", test: nil)
+        user = try user.save(on: conn).wait()
+        try XCTAssertEqual(User.find(1, on: conn).wait()?.test, "foo")
+    }
 
     static let allTests = [
         ("testSchema", testSchema),

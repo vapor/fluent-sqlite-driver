@@ -45,3 +45,7 @@ extension SQLiteStringModel {
 /// A SQLite database pivot.
 /// See `Fluent.Pivot`.
 public protocol SQLiteStringPivot: Pivot, SQLiteStringModel { }
+
+/// A SQLite database migration.
+/// See `Fluent.Migration`.
+public protocol SQLiteMigration: Migration where Self.Database == SQLiteDatabase { }

@@ -6,3 +6,5 @@ Database
 *.xcodeproj
 database.db
 Package.resolved
+DerivedData
+

@@ -6,7 +6,7 @@ public final class FluentSQLiteProvider: Provider {
     /// See Provider.register
     public func register(_ services: inout Services) throws {
         try services.register(FluentProvider())
-        services.register(SQLiteDatabase.self) { container -> SQLiteDatabase in
+        services.register { container -> SQLiteDatabase in
             let storage = try container.make(SQLiteStorage.self)
             return try SQLiteDatabase(storage: storage)
         }
@@ -24,3 +24,4 @@ public final class FluentSQLiteProvider: Provider {
 
 public typealias SQLiteCache = DatabaseKeyedCache<ConfiguredDatabase<SQLiteDatabase>>
 extension SQLiteDatabase: KeyedCacheSupporting { }
+extension SQLiteDatabase: Service { }

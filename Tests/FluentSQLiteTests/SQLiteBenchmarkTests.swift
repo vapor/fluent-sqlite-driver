@@ -11,7 +11,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
 
     override func setUp() {
         database = try! SQLiteDatabase(storage: .memory)
-        let group = MultiThreadedEventLoopGroup(numThreads: 1)
+        let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         benchmarker = try! Benchmarker(database, on: group, onFail: XCTFail)
     }
 

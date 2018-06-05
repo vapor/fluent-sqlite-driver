@@ -240,6 +240,49 @@ final class SQLiteBenchmarkTests: XCTestCase {
         user = try user.save(on: conn).wait()
         try XCTAssertEqual(User.find(1, on: conn).wait()?.test, "foo")
     }
+    
+    func testReferenceEnforcement() throws {
+        struct City: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            let regionId: Int
+            let name: String
+            
+            static func prepare(on connection: SQLiteConnection) -> Future<Void> {
+                return Database.create(self, on: connection) { builder in
+                    try addProperties(to: builder)
+                    builder.foreignKey(from: \.regionId, to: \Region.id)
+                }
+            }
+        }
+        struct Region: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            var name: String
+        }
+        
+        let sqlite: DatabaseConnectionPool<ConfiguredDatabase<SQLiteDatabase>>
+        do {
+            var databases = DatabasesConfig()
+            try! databases.add(database: SQLiteDatabase(storage: .memory), as: .sqlite)
+            databases.enableReferences(on: .sqlite)
+            let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+            let dbs = try databases.resolve(on: BasicContainer(config: .init(), environment: .testing, services: .init(), on: group))
+            sqlite = try dbs.requireDatabase(for: .sqlite).newConnectionPool(config: .init(maxConnections: 4), on: group)
+        }
+        let conn = try sqlite.requestConnection().wait()
+        defer { sqlite.releaseConnection(conn) }
+        
+        try Region.prepare(on: conn).wait()
+        defer { try! Region.revert(on: conn).wait() }
+        try City.prepare(on: conn).wait()
+        defer { try! City.revert(on: conn).wait() }
+        
+        do {
+            _ = try City(id: nil, regionId: 42, name: "city").save(on: conn).wait()
+            XCTFail("should have errored")
+        } catch {
+            XCTAssert(error is SQLiteError)
+        }
+    }
 
     static let allTests = [
         ("testSchema", testSchema),

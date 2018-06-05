@@ -103,12 +103,12 @@ extension SQLiteDatabase: SQLSupporting {
     }
     
     /// See `SQLSupporting`.
-    public static func enableReferences(on conn: SQLiteConnection) -> Future<Void> {
+    public static func enableForeignKeys(on conn: SQLiteConnection) -> Future<Void> {
         return conn.query("PRAGMA foreign_keys = ON;").transform(to: ())
     }
     
     /// See `SQLSupporting`.
-    public static func disableReferences(on conn: SQLiteConnection) -> Future<Void> {
+    public static func disableForeignKeys(on conn: SQLiteConnection) -> Future<Void> {
         return conn.query("PRAGMA foreign_keys = OFF;").transform(to: ())
     }
     

@@ -200,6 +200,15 @@ final class SQLiteBenchmarkTests: XCTestCase {
         let fetched = try C.find(c.requireID(), on: conn).wait()
         XCTAssertEqual(fetched?.id, c.id)
     }
+    
+    // https://github.com/vapor/fluent-sqlite/issues/5
+    func testRelativeDB() throws {
+        let sqlite = try SQLiteDatabase(storage: .file(path: "foo.sqlite"))
+        let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        let conn = try sqlite.newConnection(on: eventLoop).wait()
+        let version = try conn.query("SELECT 1").wait()
+        print(version)
+    }
 
     static let allTests = [
         ("testSchema", testSchema),
@@ -218,5 +227,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
         ("testUUIDPivot", testUUIDPivot),
         ("testSQLiteEnums", testSQLiteEnums),
         ("testSQLiteJSON", testSQLiteJSON),
+        ("testRelativeDB", testRelativeDB),
     ]
 }

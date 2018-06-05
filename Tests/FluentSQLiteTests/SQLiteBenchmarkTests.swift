@@ -241,6 +241,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
         try XCTAssertEqual(User.find(1, on: conn).wait()?.test, "foo")
     }
     
+    // https://github.com/vapor/fluent-sqlite/issues/9
     func testReferenceEnforcement() throws {
         struct City: SQLiteModel, SQLiteMigration {
             var id: Int?

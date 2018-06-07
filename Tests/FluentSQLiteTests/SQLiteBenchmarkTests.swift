@@ -88,11 +88,13 @@ final class SQLiteBenchmarkTests: XCTestCase {
     }
 
     func testContains() throws {
-        try benchmarker.benchmarkContains_withSchema()
+        throw FluentError.init(identifier: "unimplemented", reason: "fixme")
+//        try benchmarker.benchmarkContains_withSchema()
     }
     
     func testSQLiteEnums() throws {
-        enum PetType: Int, SQLiteEnumType {
+        enum PetType: Int, SQLiteEnumType, CaseIterable {
+            static let allCases: [PetType] = [.cat, .dog]
             case cat, dog
         }
 
@@ -219,9 +221,9 @@ final class SQLiteBenchmarkTests: XCTestCase {
             
             static func prepare(on conn: SQLiteConnection) -> Future<Void> {
                 return SQLiteDatabase.create(User.self, on: conn) { builder in
-                    builder.field(for: \.id, primaryKey: true)
+                    builder.field(for: \.id, isIdentifier: true)
                     builder.field(for: \.name)
-                    builder.field(for: "test", type: .init(name: "TEXT", attributes: ["DEFAULT 'foo'"]))
+                    builder.field(for: \.test, type: .text)
                 }
             }
             
@@ -251,7 +253,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
             static func prepare(on connection: SQLiteConnection) -> Future<Void> {
                 return Database.create(self, on: connection) { builder in
                     try addProperties(to: builder)
-                    builder.foreignKey(from: \.regionId, to: \Region.id)
+                    builder.reference(from: \.regionId, to: \Region.id)
                 }
             }
         }
@@ -264,7 +266,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
         do {
             var databases = DatabasesConfig()
             try! databases.add(database: SQLiteDatabase(storage: .memory), as: .sqlite)
-            databases.enableForeignKeys(on: .sqlite)
+            databases.enableReferebces(on: .sqlite)
             let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
             let dbs = try databases.resolve(on: BasicContainer(config: .init(), environment: .testing, services: .init(), on: group))
             sqlite = try dbs.requireDatabase(for: .sqlite).newConnectionPool(config: .init(maxConnections: 4), on: group)

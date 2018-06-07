@@ -15,7 +15,7 @@ extension SQLiteDatabase: JoinSupporting {
         return .init(
             natural: false,
             method,
-            table: .table(.init(table: .init(table: .init(name: base.table!)))),
+            table: .table(.init(table: .init(table: .init(name: joined.table!)))),
             constraint: .condition(.binary(.column(base), .equal, .column(joined)))
         )
     }

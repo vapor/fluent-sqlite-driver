@@ -15,6 +15,7 @@ extension SQLiteQuery {
         public var predicate: Expression?
         public var limit: Int?
         public var offset: Int?
+        public var defaultRelation: Expression.BinaryOperator
         public init(_ statement: Statement, table: TableName) {
             self.statement = statement
             self.table = table
@@ -24,6 +25,7 @@ extension SQLiteQuery {
             self.predicate = nil
             self.limit = nil
             self.offset = nil
+            defaultRelation = .and
         }
     }
 }
@@ -102,7 +104,7 @@ extension SQLiteDatabase: QuerySupporting {
             query = .select(.init(
                 with: nil,
                 distinct: nil,
-                columns: [.all(nil)],
+                columns: fluent.keys.isEmpty ? [.all(nil)] : fluent.keys,
                 tables: [table],
                 predicate: fluent.predicate
             ))
@@ -240,8 +242,10 @@ extension SQLiteDatabase: QuerySupporting {
         fatalError()
     }
     
-    public static func queryFilterValue(_ encodables: [Encodable]) -> SQLiteQuery.Expression {
-        fatalError()
+    public static func queryFilterValue<E>(_ encodables: [E]) -> SQLiteQuery.Expression
+        where E: Encodable
+    {
+        return try! .expressions(encodables.map { try .bind($0) })
     }
     
     public static var queryFilterValueNil: SQLiteQuery.Expression {
@@ -253,15 +257,17 @@ extension SQLiteDatabase: QuerySupporting {
     }
     
     public static func queryFilters(for query: SQLiteQuery.FluentQuery) -> [SQLiteQuery.Expression] {
-        if let expression = query.predicate {
-            return [expression]
-        } else {
-            return []
+        switch query.predicate {
+        case .none: return []
+        case .some(let wrapped): return [wrapped]
         }
     }
     
     public static func queryFilterApply(_ filter: SQLiteQuery.Expression, to query: inout SQLiteQuery.FluentQuery) {
-        query.predicate &= filter
+        switch query.defaultRelation {
+        case .or: query.predicate |= filter
+        default: query.predicate &= filter
+        }
     }
     
     public static var queryFilterRelationAnd: SQLiteQuery.Expression.BinaryOperator {
@@ -270,6 +276,11 @@ extension SQLiteDatabase: QuerySupporting {
     
     public static var queryFilterRelationOr: SQLiteQuery.Expression.BinaryOperator {
         return .or
+    }
+    
+    
+    public static func queryDefaultFilterRelation(_ relation: SQLiteQuery.Expression.BinaryOperator, on query: inout SQLiteQuery.FluentQuery) {
+        query.defaultRelation = relation
     }
     
     public static func queryFilterGroup(_ relation: SQLiteQuery.Expression.BinaryOperator, _ filters: [SQLiteQuery.Expression]) -> SQLiteQuery.Expression {

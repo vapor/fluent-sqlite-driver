@@ -83,7 +83,11 @@ extension SQLiteDatabase: SchemaSupporting {
         }
         
         if isIdentifier {
-            constraints.append(.primaryKey(autoIncrement: true))
+            constraints.append(.notNull)
+            switch typeName {
+            case .integer: constraints.append(.primaryKey(autoIncrement: true))
+            default: constraints.append(.primaryKey(autoIncrement: false))
+            }
         }
         
         return .init(name: field.name, typeName: typeName, constraints: constraints)

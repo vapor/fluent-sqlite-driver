@@ -88,8 +88,51 @@ final class SQLiteBenchmarkTests: XCTestCase {
     }
 
     func testContains() throws {
-        throw FluentError.init(identifier: "unimplemented", reason: "fixme")
-//        try benchmarker.benchmarkContains_withSchema()
+        struct User: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            var name: String
+            var age: Int
+        }
+        let conn = try benchmarker.pool.requestConnection().wait()
+        defer { benchmarker.pool.releaseConnection(conn) }
+        
+        try User.prepare(on: conn).wait()
+        defer { try! User.revert(on: conn).wait() }
+        
+        // create
+        let tanner1 = User(id: nil, name: "tanner", age: 23)
+        _ = try tanner1.save(on: conn).wait()
+        let tanner2 = User(id: nil, name: "ner", age: 23)
+        _ = try tanner2.save(on: conn).wait()
+        let tanner3 = User(id: nil, name: "tan", age: 23)
+        _ = try tanner3.save(on: conn).wait()
+        
+        let tas = try User.query(on: conn).filter(\.name =~ "ta").count().wait()
+        if tas != 2 {
+            XCTFail("tas == \(tas)")
+        }
+        //        let ers = try User.query(on: conn).filter(\.name ~= "er").count().wait()
+        //        if ers != 2 {
+        //            XCTFail("ers == \(tas)")
+        //        }
+        let annes = try User.query(on: conn).filter(\.name ~~ "anne").count().wait()
+        if annes != 1 {
+            XCTFail("annes == \(tas)")
+        }
+        let ns = try User.query(on: conn).filter(\.name ~~ "n").count().wait()
+        if ns != 3 {
+            XCTFail("ns == \(tas)")
+        }
+        
+        let nertan = try User.query(on: conn).filter(\.name ~~ ["ner", "tan"]).count().wait()
+        if nertan != 2 {
+            XCTFail("nertan == \(tas)")
+        }
+        
+        let notner = try User.query(on: conn).filter(\.name !~ ["ner"]).count().wait()
+        if notner != 2 {
+            XCTFail("nertan == \(tas)")
+        }
     }
     
     func testSQLiteEnums() throws {
@@ -223,7 +266,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
                 return SQLiteDatabase.create(User.self, on: conn) { builder in
                     builder.field(for: \.id, isIdentifier: true)
                     builder.field(for: \.name)
-                    builder.field(for: \.test, type: .text)
+                    builder.field(.init(name: "test", typeName: .text, constraints: [.default(.literal("foo"))]))
                 }
             }
             

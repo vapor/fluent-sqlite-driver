@@ -7,6 +7,12 @@ extension SQLiteQuery {
             case delete
         }
         
+        public enum Comparison {
+            case binary(Expression.BinaryOperator)
+            case subset(Expression.SubsetOperator)
+            case compare(Expression.Compare.Operator)
+        }
+        
         public var statement: Statement
         public var table: TableName
         public var joins: [JoinClause.Join]
@@ -50,7 +56,7 @@ extension SQLiteDatabase: QuerySupporting {
     public typealias QueryField = SQLiteQuery.QualifiedColumnName
     
     /// See `QuerySupporting`.
-    public typealias QueryFilterMethod = SQLiteQuery.Expression.BinaryOperator
+    public typealias QueryFilterMethod = SQLiteQuery.FluentQuery.Comparison
     
     /// See `QuerySupporting`.
     public typealias QueryFilterValue = SQLiteQuery.Expression
@@ -82,12 +88,20 @@ extension SQLiteDatabase: QuerySupporting {
         let query: SQLiteQuery
         switch fluent.statement {
         case .insert:
+            // filter out all `NULL` values, no need to insert them since
+            // they could override default values that we want to keep
+            let values = fluent.values.filter { (key, val) in
+                switch val {
+                case .literal(let literal) where literal == .null: return false
+                default: return true
+                }
+            }
             query = .insert(.init(
                 with: nil,
                 conflictResolution: nil,
                 table: .init(table: fluent.table, alias: nil),
-                columns: fluent.values.keys.map { .init($0) },
-                values: .values([.init(fluent.values.values)]),
+                columns: values.keys.map { .init($0) },
+                values: .values([.init(values.values)]),
                 upsert: nil
             ))
         case .select:
@@ -143,7 +157,14 @@ extension SQLiteDatabase: QuerySupporting {
     public static func modelEvent<M>(event: ModelEvent, model: M, on conn: SQLiteConnection) -> EventLoopFuture<M> where SQLiteDatabase == M.Database, M : Model {
         var copy = model
         switch event {
-        case .willCreate: copy.fluentID = UUID() as? M.ID
+        case .willCreate:
+            if M.ID.self is UUID.Type {
+                copy.fluentID = UUID() as? M.ID
+            }
+        case .didCreate:
+            if M.ID.self is Int.Type {
+                copy.fluentID = conn.lastAutoincrementID as? M.ID
+            }
         default: break
         }
         return conn.future(copy)
@@ -210,36 +231,36 @@ extension SQLiteDatabase: QuerySupporting {
         return .init(schema: nil, table: property.entity, name: .init(property.path[0]))
     }
     
-    public static var queryFilterMethodEqual: SQLiteQuery.Expression.BinaryOperator {
-        return .equal
+    public static var queryFilterMethodEqual: SQLiteQuery.FluentQuery.Comparison {
+        return .binary(.equal)
     }
     
-    public static var queryFilterMethodNotEqual: SQLiteQuery.Expression.BinaryOperator {
-        return .notEqual
+    public static var queryFilterMethodNotEqual: SQLiteQuery.FluentQuery.Comparison {
+        return .binary(.notEqual)
     }
     
-    public static var queryFilterMethodGreaterThan: SQLiteQuery.Expression.BinaryOperator {
-        return .greaterThan
+    public static var queryFilterMethodGreaterThan: SQLiteQuery.FluentQuery.Comparison {
+        return .binary(.greaterThan)
     }
     
-    public static var queryFilterMethodLessThan: SQLiteQuery.Expression.BinaryOperator {
-        return .lessThan
+    public static var queryFilterMethodLessThan: SQLiteQuery.FluentQuery.Comparison {
+        return .binary(.lessThan)
     }
     
-    public static var queryFilterMethodGreaterThanOrEqual: SQLiteQuery.Expression.BinaryOperator {
-        return .greaterThanOrEqual
+    public static var queryFilterMethodGreaterThanOrEqual: SQLiteQuery.FluentQuery.Comparison {
+        return .binary(.greaterThanOrEqual)
     }
     
-    public static var queryFilterMethodLessThanOrEqual: SQLiteQuery.Expression.BinaryOperator {
-        return .lessThanOrEqual
+    public static var queryFilterMethodLessThanOrEqual: SQLiteQuery.FluentQuery.Comparison {
+        return .binary(.lessThanOrEqual)
     }
     
-    public static var queryFilterMethodInSubset: SQLiteQuery.Expression.BinaryOperator {
-        fatalError()
+    public static var queryFilterMethodInSubset: SQLiteQuery.FluentQuery.Comparison {
+        return .subset(.in)
     }
     
-    public static var queryFilterMethodNotInSubset: SQLiteQuery.Expression.BinaryOperator {
-        fatalError()
+    public static var queryFilterMethodNotInSubset: SQLiteQuery.FluentQuery.Comparison {
+        return .subset(.notIn)
     }
     
     public static func queryFilterValue<E>(_ encodables: [E]) -> SQLiteQuery.Expression
@@ -252,8 +273,13 @@ extension SQLiteDatabase: QuerySupporting {
         return .literal(.null)
     }
     
-    public static func queryFilter(_ field: SQLiteQuery.QualifiedColumnName, _ method: SQLiteQuery.Expression.BinaryOperator, _ value: SQLiteQuery.Expression) -> SQLiteQuery.Expression {
-        return .binary(.column(field), method, value)
+    public static func queryFilter(_ field: SQLiteQuery.QualifiedColumnName, _ method: SQLiteQuery.FluentQuery.Comparison, _ value: SQLiteQuery.Expression) -> SQLiteQuery.Expression {
+        switch method {
+        case .binary(let binary): return .binary(.column(field), binary, value)
+        case .compare(let compare): return .compare(.init(.column(field), not: false, compare, value, escape: nil))
+        case .subset(let subset): return .subset(.column(field), subset, .expressions([value]))
+        }
+        
     }
     
     public static func queryFilters(for query: SQLiteQuery.FluentQuery) -> [SQLiteQuery.Expression] {
@@ -284,15 +310,19 @@ extension SQLiteDatabase: QuerySupporting {
     }
     
     public static func queryFilterGroup(_ relation: SQLiteQuery.Expression.BinaryOperator, _ filters: [SQLiteQuery.Expression]) -> SQLiteQuery.Expression {
-        var predicate: SQLiteQuery.Expression?
+        var current: SQLiteQuery.Expression?
         for next in filters {
             switch relation {
-            case .or: predicate |= next
-            case .and: predicate &= next
+            case .or: current |= next
+            case .and: current &= next
             default: break
             }
         }
-        return predicate ?? .expressions([])
+        if let predicate = current {
+            return .expressions([predicate])
+        } else {
+            return .expressions([])
+        }
     }
     
     public static var queryKeyAll: SQLiteQuery.Select.ResultColumn {

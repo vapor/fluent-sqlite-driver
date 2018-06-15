@@ -11,7 +11,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
 
     override func setUp() {
         database = try! SQLiteDatabase(storage: .memory)
-        let group = MultiThreadedEventLoopGroup(numThreads: 1)
+        let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         benchmarker = try! Benchmarker(database, on: group, onFail: XCTFail)
     }
 
@@ -88,11 +88,56 @@ final class SQLiteBenchmarkTests: XCTestCase {
     }
 
     func testContains() throws {
-        try benchmarker.benchmarkContains_withSchema()
+        struct User: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            var name: String
+            var age: Int
+        }
+        let conn = try benchmarker.pool.requestConnection().wait()
+        defer { benchmarker.pool.releaseConnection(conn) }
+        
+        try User.prepare(on: conn).wait()
+        defer { try! User.revert(on: conn).wait() }
+        
+        // create
+        let tanner1 = User(id: nil, name: "tanner", age: 23)
+        _ = try tanner1.save(on: conn).wait()
+        let tanner2 = User(id: nil, name: "ner", age: 23)
+        _ = try tanner2.save(on: conn).wait()
+        let tanner3 = User(id: nil, name: "tan", age: 23)
+        _ = try tanner3.save(on: conn).wait()
+        
+        let tas = try User.query(on: conn).filter(\.name =~ "ta").count().wait()
+        if tas != 2 {
+            XCTFail("tas == \(tas)")
+        }
+        //        let ers = try User.query(on: conn).filter(\.name ~= "er").count().wait()
+        //        if ers != 2 {
+        //            XCTFail("ers == \(tas)")
+        //        }
+        let annes = try User.query(on: conn).filter(\.name ~~ "anne").count().wait()
+        if annes != 1 {
+            XCTFail("annes == \(tas)")
+        }
+        let ns = try User.query(on: conn).filter(\.name ~~ "n").count().wait()
+        if ns != 3 {
+            XCTFail("ns == \(tas)")
+        }
+        
+        let nertan = try User.query(on: conn).filter(\.name ~~ ["ner", "tan"]).count().wait()
+        if nertan != 2 {
+            XCTFail("nertan == \(tas)")
+        }
+        
+        let notner = try User.query(on: conn).filter(\.name !~ ["ner"]).count().wait()
+        if notner != 2 {
+            XCTFail("nertan == \(tas)")
+        }
     }
     
     func testSQLiteEnums() throws {
-        enum PetType: Int, SQLiteEnumType {
+        enum PetType: Int, SQLiteEnumType, CaseIterable {
+            static let allCases: [PetType] = [.cat, .dog]
             case cat, dog
         }
 
@@ -200,6 +245,90 @@ final class SQLiteBenchmarkTests: XCTestCase {
         let fetched = try C.find(c.requireID(), on: conn).wait()
         XCTAssertEqual(fetched?.id, c.id)
     }
+    
+    // https://github.com/vapor/fluent-sqlite/issues/5
+    func testRelativeDB() throws {
+        let sqlite = try SQLiteDatabase(storage: .file(path: "foo.sqlite"))
+        let eventLoop = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        let conn = try sqlite.newConnection(on: eventLoop).wait()
+        let version = try conn.query("SELECT 1").wait()
+        print(version)
+    }
+    
+    // https://github.com/vapor/fluent-sqlite/issues/8
+    func testDefaultValues() throws {
+        struct User: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            var name: String
+            var test: String?
+            
+            static func prepare(on conn: SQLiteConnection) -> Future<Void> {
+                return SQLiteDatabase.create(User.self, on: conn) { builder in
+                    builder.field(for: \.id, isIdentifier: true)
+                    builder.field(for: \.name)
+                    builder.field(.init(name: "test", typeName: .text, constraints: [.default(.literal("foo"))]))
+                }
+            }
+            
+            static func revert(on conn: SQLiteConnection) -> Future<Void> {
+                return SQLiteDatabase.delete(User.self, on: conn)
+            }
+        }
+        
+        let conn = try benchmarker.pool.requestConnection().wait()
+        defer { benchmarker.pool.releaseConnection(conn) }
+        
+        try User.prepare(on: conn).wait()
+        defer { try! User.revert(on: conn).wait() }
+        
+        var user = User(id: nil, name: "Vapor", test: nil)
+        user = try user.save(on: conn).wait()
+        try XCTAssertEqual(User.find(1, on: conn).wait()?.test, "foo")
+    }
+    
+    // https://github.com/vapor/fluent-sqlite/issues/9
+    func testReferenceEnforcement() throws {
+        struct City: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            let regionId: Int
+            let name: String
+            
+            static func prepare(on connection: SQLiteConnection) -> Future<Void> {
+                return Database.create(self, on: connection) { builder in
+                    try addProperties(to: builder)
+                    builder.reference(from: \.regionId, to: \Region.id)
+                }
+            }
+        }
+        struct Region: SQLiteModel, SQLiteMigration {
+            var id: Int?
+            var name: String
+        }
+        
+        let sqlite: DatabaseConnectionPool<ConfiguredDatabase<SQLiteDatabase>>
+        do {
+            var databases = DatabasesConfig()
+            try! databases.add(database: SQLiteDatabase(storage: .memory), as: .sqlite)
+            databases.enableReferebces(on: .sqlite)
+            let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+            let dbs = try databases.resolve(on: BasicContainer(config: .init(), environment: .testing, services: .init(), on: group))
+            sqlite = try dbs.requireDatabase(for: .sqlite).newConnectionPool(config: .init(maxConnections: 4), on: group)
+        }
+        let conn = try sqlite.requestConnection().wait()
+        defer { sqlite.releaseConnection(conn) }
+        
+        try Region.prepare(on: conn).wait()
+        defer { try! Region.revert(on: conn).wait() }
+        try City.prepare(on: conn).wait()
+        defer { try! City.revert(on: conn).wait() }
+        
+        do {
+            _ = try City(id: nil, regionId: 42, name: "city").save(on: conn).wait()
+            XCTFail("should have errored")
+        } catch {
+            XCTAssert(error is SQLiteError)
+        }
+    }
 
     static let allTests = [
         ("testSchema", testSchema),
@@ -218,5 +347,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
         ("testUUIDPivot", testUUIDPivot),
         ("testSQLiteEnums", testSQLiteEnums),
         ("testSQLiteJSON", testSQLiteJSON),
+        ("testRelativeDB", testRelativeDB),
     ]
 }

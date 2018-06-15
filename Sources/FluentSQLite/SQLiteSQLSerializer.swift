@@ -1,6 +1,4 @@
-import SQL
-
-/// A SQLite flavored SQL serializer.
-public final class SQLiteSQLSerializer: SQLSerializer {
-    public init() { }
-}
+///// A SQLite flavored SQL serializer.
+//final class SQLiteSQLSerializer: SQLSerializer {
+//    init() { }
+//}

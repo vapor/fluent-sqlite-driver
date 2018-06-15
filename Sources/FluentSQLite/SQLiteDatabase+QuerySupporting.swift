@@ -19,9 +19,11 @@ extension SQLiteQuery {
         public var keys: [SQLiteQuery.Select.ResultColumn]
         public var values: [String: SQLiteQuery.Expression]
         public var predicate: Expression?
+        public var orderBy: [SQLiteQuery.OrderBy]
         public var limit: Int?
         public var offset: Int?
         public var defaultRelation: Expression.BinaryOperator
+        
         public init(_ statement: Statement, table: TableName) {
             self.statement = statement
             self.table = table
@@ -29,6 +31,7 @@ extension SQLiteQuery {
             self.keys = []
             self.values = [:]
             self.predicate = nil
+            self.orderBy = []
             self.limit = nil
             self.offset = nil
             defaultRelation = .and
@@ -71,7 +74,7 @@ extension SQLiteDatabase: QuerySupporting {
     public typealias QueryKey = SQLiteQuery.Select.ResultColumn
     
     /// See `QuerySupporting`.
-    public typealias QuerySort = String
+    public typealias QuerySort = SQLiteQuery.OrderBy
     
     /// See `QuerySupporting`.
     public typealias QuerySortDirection = SQLiteQuery.Direction
@@ -120,7 +123,8 @@ extension SQLiteDatabase: QuerySupporting {
                 distinct: nil,
                 columns: fluent.keys.isEmpty ? [.all(nil)] : fluent.keys,
                 tables: [table],
-                predicate: fluent.predicate
+                predicate: fluent.predicate,
+                orderBy: fluent.orderBy
             ))
         case .update:
             query = .update(.init(
@@ -368,8 +372,8 @@ extension SQLiteDatabase: QuerySupporting {
         }
     }
     
-    public static func querySort(_ field: SQLiteQuery.QualifiedColumnName, _ direction: SQLiteQuery.Direction) -> String {
-        fatalError()
+    public static func querySort(_ column: SQLiteQuery.QualifiedColumnName, _ direction: SQLiteQuery.Direction) -> SQLiteQuery.OrderBy {
+        return .init(expression: .column(column), direction: direction)
     }
     
     public static var querySortDirectionAscending: SQLiteQuery.Direction {
@@ -380,7 +384,7 @@ extension SQLiteDatabase: QuerySupporting {
         return .descending
     }
     
-    public static func querySortApply(_ sort: String, to query: inout SQLiteQuery.FluentQuery) {
-        fatalError()
+    public static func querySortApply(_ orderBy: SQLiteQuery.OrderBy, to query: inout SQLiteQuery.FluentQuery) {
+        query.orderBy.append(orderBy)
     }
 }

@@ -5,12 +5,12 @@
 /// See `SQLiteType` for more information.
 public protocol SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    static var sqliteFieldType: SQLiteFieldType { get }
+    static var sqliteFieldType: SQLiteDataType { get }
 }
 
 extension FixedWidthInteger {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return .integer }
+    public static var sqliteFieldType: SQLiteDataType { return .integer }
 }
 
 extension UInt: SQLiteFieldTypeStaticRepresentable { }
@@ -26,12 +26,12 @@ extension Int64: SQLiteFieldTypeStaticRepresentable { }
 
 extension Date: SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return Double.sqliteFieldType }
+    public static var sqliteFieldType: SQLiteDataType { return Double.sqliteFieldType }
 }
 
 extension BinaryFloatingPoint {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return .real }
+    public static var sqliteFieldType: SQLiteDataType { return .real }
 }
 
 extension Float: SQLiteFieldTypeStaticRepresentable { }
@@ -39,25 +39,25 @@ extension Double: SQLiteFieldTypeStaticRepresentable { }
 
 extension Bool: SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return Int.sqliteFieldType }
+    public static var sqliteFieldType: SQLiteDataType { return Int.sqliteFieldType }
 }
 
 extension UUID: SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return .blob }
+    public static var sqliteFieldType: SQLiteDataType { return .blob }
 }
 
 extension Data: SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return .blob }
+    public static var sqliteFieldType: SQLiteDataType { return .blob }
 }
 
 extension String: SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return .text }
+    public static var sqliteFieldType: SQLiteDataType { return .text }
 }
 
 extension URL: SQLiteFieldTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
-    public static var sqliteFieldType: SQLiteFieldType { return String.sqliteFieldType }
+    public static var sqliteFieldType: SQLiteDataType { return String.sqliteFieldType }
 }

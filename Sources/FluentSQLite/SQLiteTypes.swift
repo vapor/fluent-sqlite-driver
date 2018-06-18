@@ -3,7 +3,7 @@
 /// This protocol defines which `SQLiteFieldType` (TEXT, BLOB, etc) a type uses and how it converts to/from `SQLiteData`.
 ///
 /// See `SQLiteEnumType` and `SQLiteJSONType` for more specialized use-cases.
-public typealias SQLiteType = Codable & SQLiteFieldTypeStaticRepresentable & SQLiteDataConvertible
+public typealias SQLiteType = Codable & SQLiteDataTypeStaticRepresentable & SQLiteDataConvertible
 
 // MARK: JSON
 
@@ -71,8 +71,8 @@ public typealias SQLiteEnumType = SQLiteType & ReflectionDecodable & RawRepresen
 
 /// Provides a default `SQLiteFieldTypeStaticRepresentable` implementation where the type is also
 /// `RawRepresentable` by a `SQLiteFieldTypeStaticRepresentable` type.
-extension SQLiteFieldTypeStaticRepresentable
-    where Self: RawRepresentable, Self.RawValue: SQLiteFieldTypeStaticRepresentable
+extension SQLiteDataTypeStaticRepresentable
+    where Self: RawRepresentable, Self.RawValue: SQLiteDataTypeStaticRepresentable
 {
     /// Use the `RawValue`'s `SQLiteFieldType`.
     ///

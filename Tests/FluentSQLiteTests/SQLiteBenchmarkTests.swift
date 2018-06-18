@@ -4,6 +4,7 @@ import FluentBenchmark
 import FluentSQLite
 import SQLite
 import XCTest
+import FluentSQL
 
 final class SQLiteBenchmarkTests: XCTestCase {
     var benchmarker: Benchmarker<SQLiteDatabase>!
@@ -266,7 +267,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
                 return SQLiteDatabase.create(User.self, on: conn) { builder in
                     builder.field(for: \.id, isIdentifier: true)
                     builder.field(for: \.name)
-                    builder.field(.init(name: "test", typeName: .text, constraints: [.default(.literal("foo"))]))
+                    builder.field(for: \.test, type: .text, .default(.literal("foo")))
                 }
             }
             

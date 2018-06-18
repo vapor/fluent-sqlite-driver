@@ -3,7 +3,7 @@
 /// Types conforming to this protocol can be automatically migrated by `FluentSQLite`.
 ///
 /// See `SQLiteType` for more information.
-public protocol SQLiteFieldTypeStaticRepresentable {
+public protocol SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     static var sqliteFieldType: SQLiteDataType { get }
 }
@@ -13,18 +13,18 @@ extension FixedWidthInteger {
     public static var sqliteFieldType: SQLiteDataType { return .integer }
 }
 
-extension UInt: SQLiteFieldTypeStaticRepresentable { }
-extension UInt8: SQLiteFieldTypeStaticRepresentable { }
-extension UInt16: SQLiteFieldTypeStaticRepresentable { }
-extension UInt32: SQLiteFieldTypeStaticRepresentable { }
-extension UInt64: SQLiteFieldTypeStaticRepresentable { }
-extension Int: SQLiteFieldTypeStaticRepresentable { }
-extension Int8: SQLiteFieldTypeStaticRepresentable { }
-extension Int16: SQLiteFieldTypeStaticRepresentable { }
-extension Int32: SQLiteFieldTypeStaticRepresentable { }
-extension Int64: SQLiteFieldTypeStaticRepresentable { }
+extension UInt: SQLiteDataTypeStaticRepresentable { }
+extension UInt8: SQLiteDataTypeStaticRepresentable { }
+extension UInt16: SQLiteDataTypeStaticRepresentable { }
+extension UInt32: SQLiteDataTypeStaticRepresentable { }
+extension UInt64: SQLiteDataTypeStaticRepresentable { }
+extension Int: SQLiteDataTypeStaticRepresentable { }
+extension Int8: SQLiteDataTypeStaticRepresentable { }
+extension Int16: SQLiteDataTypeStaticRepresentable { }
+extension Int32: SQLiteDataTypeStaticRepresentable { }
+extension Int64: SQLiteDataTypeStaticRepresentable { }
 
-extension Date: SQLiteFieldTypeStaticRepresentable {
+extension Date: SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     public static var sqliteFieldType: SQLiteDataType { return Double.sqliteFieldType }
 }
@@ -34,30 +34,30 @@ extension BinaryFloatingPoint {
     public static var sqliteFieldType: SQLiteDataType { return .real }
 }
 
-extension Float: SQLiteFieldTypeStaticRepresentable { }
-extension Double: SQLiteFieldTypeStaticRepresentable { }
+extension Float: SQLiteDataTypeStaticRepresentable { }
+extension Double: SQLiteDataTypeStaticRepresentable { }
 
-extension Bool: SQLiteFieldTypeStaticRepresentable {
+extension Bool: SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     public static var sqliteFieldType: SQLiteDataType { return Int.sqliteFieldType }
 }
 
-extension UUID: SQLiteFieldTypeStaticRepresentable {
+extension UUID: SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     public static var sqliteFieldType: SQLiteDataType { return .blob }
 }
 
-extension Data: SQLiteFieldTypeStaticRepresentable {
+extension Data: SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     public static var sqliteFieldType: SQLiteDataType { return .blob }
 }
 
-extension String: SQLiteFieldTypeStaticRepresentable {
+extension String: SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     public static var sqliteFieldType: SQLiteDataType { return .text }
 }
 
-extension URL: SQLiteFieldTypeStaticRepresentable {
+extension URL: SQLiteDataTypeStaticRepresentable {
     /// See `SQLiteFieldTypeStaticRepresentable`.
     public static var sqliteFieldType: SQLiteDataType { return String.sqliteFieldType }
 }

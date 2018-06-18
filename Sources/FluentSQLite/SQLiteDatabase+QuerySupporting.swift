@@ -124,7 +124,9 @@ extension SQLiteDatabase: QuerySupporting {
                 columns: fluent.keys.isEmpty ? [.all(nil)] : fluent.keys,
                 tables: [table],
                 predicate: fluent.predicate,
-                orderBy: fluent.orderBy
+                orderBy: fluent.orderBy,
+                limit: fluent.limit,
+                offset: fluent.offset
             ))
         case .update:
             query = .update(.init(

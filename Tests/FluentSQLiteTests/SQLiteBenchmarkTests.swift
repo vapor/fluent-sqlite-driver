@@ -137,7 +137,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
     }
     
     func testSQLiteEnums() throws {
-        enum PetType: Int, SQLiteEnumType, CaseIterable {
+        enum PetType: Int, Codable, Swift.CaseIterable {
             static let allCases: [PetType] = [.cat, .dog]
             case cat, dog
         }

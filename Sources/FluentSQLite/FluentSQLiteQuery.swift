@@ -24,6 +24,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
     public typealias SelectExpression = SQLiteSelectExpression
     public typealias Join = SQLiteJoin
     public typealias OrderBy = SQLiteOrderBy
+    public typealias GroupBy = SQLiteGroupBy
     public typealias RowDecoder = SQLiteRowDecoder
     
     public var statement: Statement
@@ -33,6 +34,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
     public var joins: [Join]
     public var predicate: Expression?
     public var orderBy: [OrderBy]
+    public var groupBy: [GroupBy]
     public var limit: Int?
     public var offset: Int?
     public var defaultBinaryOperator: GenericSQLBinaryOperator
@@ -46,6 +48,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
             joins: [],
             predicate: nil,
             orderBy: [],
+            groupBy: [],
             limit: nil,
             offset: nil,
             defaultBinaryOperator: .and

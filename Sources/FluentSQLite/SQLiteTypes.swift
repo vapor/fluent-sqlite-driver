@@ -3,7 +3,7 @@
 /// This protocol defines which `SQLiteFieldType` (TEXT, BLOB, etc) a type uses and how it converts to/from `SQLiteData`.
 ///
 /// See `SQLiteEnumType` and `SQLiteJSONType` for more specialized use-cases.
-public typealias SQLiteType = Codable & SQLiteFieldTypeStaticRepresentable & SQLiteDataConvertible
+public typealias SQLiteType = Codable & SQLiteDataTypeStaticRepresentable & SQLiteDataConvertible
 
 // MARK: JSON
 
@@ -29,7 +29,7 @@ extension SQLiteJSONType {
     /// Use the `Data`'s `SQLiteFieldType` to store the JSON-encoded data.
     ///
     /// See `SQLiteFieldTypeStaticRepresentable.sqliteFieldType` for more information.
-    public static var sqliteFieldType: SQLiteDataType { return Data.sqliteFieldType }
+    public static var sqliteDataType: SQLiteDataType { return Data.sqliteDataType }
 
     /// JSON-encode `Self` to `Data`.
     ///
@@ -71,13 +71,13 @@ public typealias SQLiteEnumType = SQLiteType & ReflectionDecodable & RawRepresen
 
 /// Provides a default `SQLiteFieldTypeStaticRepresentable` implementation where the type is also
 /// `RawRepresentable` by a `SQLiteFieldTypeStaticRepresentable` type.
-extension SQLiteFieldTypeStaticRepresentable
-    where Self: RawRepresentable, Self.RawValue: SQLiteFieldTypeStaticRepresentable
+extension SQLiteDataTypeStaticRepresentable
+    where Self: RawRepresentable, Self.RawValue: SQLiteDataTypeStaticRepresentable
 {
     /// Use the `RawValue`'s `SQLiteFieldType`.
     ///
     /// See `SQLiteFieldTypeStaticRepresentable.sqliteFieldType` for more information.
-    public static var sqliteFieldType: SQLiteDataType { return RawValue.sqliteFieldType }
+    public static var sqliteDataType: SQLiteDataType { return RawValue.sqliteDataType }
 }
 
 /// Provides a default `SQLiteDataConvertible` implementation where the type is also

@@ -4,6 +4,7 @@ import FluentBenchmark
 import FluentSQLite
 import SQLite
 import XCTest
+import FluentSQL
 
 final class SQLiteBenchmarkTests: XCTestCase {
     var benchmarker: Benchmarker<SQLiteDatabase>!
@@ -15,50 +16,10 @@ final class SQLiteBenchmarkTests: XCTestCase {
         benchmarker = try! Benchmarker(database, on: group, onFail: XCTFail)
     }
 
-    func testSchema() throws {
-        try benchmarker.benchmarkSchema()
+    func testBenchmark() throws {
+        try benchmarker.runAll()
     }
-
-    func testModels() throws {
-        try benchmarker.benchmarkModels_withSchema()
-    }
-
-    func testRelations() throws {
-        try benchmarker.benchmarkRelations_withSchema()
-    }
-
-    func testTimestampable() throws {
-        try benchmarker.benchmarkTimestampable_withSchema()
-    }
-
-    func testTransactions() throws {
-        try benchmarker.benchmarkTransactions_withSchema()
-    }
-
-    func testChunking() throws {
-        try benchmarker.benchmarkChunking_withSchema()
-    }
-
-    func testAutoincrement() throws {
-        try benchmarker.benchmarkAutoincrement_withSchema()
-    }
-
-    func testCache() throws {
-        try benchmarker.benchmarkCache_withSchema()
-    }
-
-    func testJoins() throws {
-        try benchmarker.benchmarkJoins_withSchema()
-    }
-
-    func testSoftDeletable() throws {
-        try benchmarker.benchmarkSoftDeletable_withSchema()
-    }
-
-    func testReferentialActions() throws {
-        try benchmarker.benchmarkReferentialActions_withSchema()
-    }
-
+    
     func testMinimumViableModelDeclaration() throws {
         /// NOTE: these must never fail to build
         struct Foo: SQLiteModel {
@@ -81,10 +42,6 @@ final class SQLiteBenchmarkTests: XCTestCase {
             var id: String?
             var name: String
         }
-    }
-  
-    func testIndexSupporting() throws {
-        try benchmarker.benchmarkIndexSupporting_withSchema()
     }
 
     func testContains() throws {
@@ -136,7 +93,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
     }
     
     func testSQLiteEnums() throws {
-        enum PetType: Int, SQLiteEnumType, CaseIterable {
+        enum PetType: Int, Codable, CaseIterable {
             static let allCases: [PetType] = [.cat, .dog]
             case cat, dog
         }
@@ -266,7 +223,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
                 return SQLiteDatabase.create(User.self, on: conn) { builder in
                     builder.field(for: \.id, isIdentifier: true)
                     builder.field(for: \.name)
-                    builder.field(.init(name: "test", typeName: .text, constraints: [.default(.literal("foo"))]))
+                    builder.field(for: \.test, type: .text, .default(.literal("foo")))
                 }
             }
             
@@ -309,7 +266,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
         do {
             var databases = DatabasesConfig()
             try! databases.add(database: SQLiteDatabase(storage: .memory), as: .sqlite)
-            databases.enableReferebces(on: .sqlite)
+            databases.enableReferences(on: .sqlite)
             let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
             let dbs = try databases.resolve(on: BasicContainer(config: .init(), environment: .testing, services: .init(), on: group))
             sqlite = try dbs.requireDatabase(for: .sqlite).newConnectionPool(config: .init(maxConnections: 4), on: group)
@@ -331,19 +288,8 @@ final class SQLiteBenchmarkTests: XCTestCase {
     }
 
     static let allTests = [
-        ("testSchema", testSchema),
-        ("testModels", testModels),
-        ("testRelations", testRelations),
-        ("testTimestampable", testTimestampable),
-        ("testTransactions", testTransactions),
-        ("testChunking", testChunking),
-        ("testAutoincrement", testAutoincrement),
-        ("testCache", testCache),
-        ("testJoins", testJoins),
-        ("testSoftDeletable", testSoftDeletable),
-        ("testReferentialActions", testReferentialActions),
+        ("testBenchmark", testBenchmark),
         ("testMinimumViableModelDeclaration", testMinimumViableModelDeclaration),
-        ("testIndexSupporting", testIndexSupporting),
         ("testUUIDPivot", testUUIDPivot),
         ("testSQLiteEnums", testSQLiteEnums),
         ("testSQLiteJSON", testSQLiteJSON),

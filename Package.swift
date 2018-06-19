@@ -11,16 +11,15 @@ let package = Package(
         .package(url: "https://github.com/vapor/core.git", from: "3.0.0"),
         
         // ✳️ Swift ORM framework (queries, models, and relations) for building NoSQL and SQL database integrations.
-        .package(url: "https://github.com/vapor/fluent.git", from: "3.0.0-rc"),
+        .package(url: "https://github.com/vapor/fluent.git", .branch("sql")),
 
         // 📦 Dependency injection / inversion of control framework.
         .package(url: "https://github.com/vapor/service.git", from: "1.0.0"),
 
         // 🔵 SQLite 3 wrapper for Swift
-        .package(url: "https://github.com/vapor/sqlite.git", from: "3.0.0-rc"),
+        .package(url: "https://github.com/vapor/sqlite.git", .branch("sql")),
     ],
     targets: [
-        .target(name: "FluentSQL", dependencies: ["Fluent", "SQL"]),
         .target(name: "FluentSQLite", dependencies: ["Async", "FluentSQL", "Service", "SQLite"]),
         .testTarget(name: "FluentSQLiteTests", dependencies: ["FluentBenchmark", "FluentSQLite", "SQLite"]),
     ]

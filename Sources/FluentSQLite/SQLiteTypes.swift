@@ -29,7 +29,7 @@ extension SQLiteJSONType {
     /// Use the `Data`'s `SQLiteFieldType` to store the JSON-encoded data.
     ///
     /// See `SQLiteFieldTypeStaticRepresentable.sqliteFieldType` for more information.
-    public static var sqliteFieldType: SQLiteDataType { return Data.sqliteFieldType }
+    public static var sqliteDataType: SQLiteDataType { return Data.sqliteDataType }
 
     /// JSON-encode `Self` to `Data`.
     ///
@@ -77,7 +77,7 @@ extension SQLiteDataTypeStaticRepresentable
     /// Use the `RawValue`'s `SQLiteFieldType`.
     ///
     /// See `SQLiteFieldTypeStaticRepresentable.sqliteFieldType` for more information.
-    public static var sqliteFieldType: SQLiteDataType { return RawValue.sqliteFieldType }
+    public static var sqliteDataType: SQLiteDataType { return RawValue.sqliteDataType }
 }
 
 /// Provides a default `SQLiteDataConvertible` implementation where the type is also

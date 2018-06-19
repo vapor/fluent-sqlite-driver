@@ -37,7 +37,7 @@ extension SQLiteDatabase: SchemaSupporting {
         
         let typeName: SQLiteDataType
         if let sqlite = type as? SQLiteDataTypeStaticRepresentable.Type {
-            switch sqlite.sqliteFieldType {
+            switch sqlite.sqliteDataType {
             case .blob: typeName = .blob
             case .integer: typeName = .integer
             case .null: typeName = .null
@@ -51,7 +51,7 @@ extension SQLiteDatabase: SchemaSupporting {
         if isIdentifier {
             constraints.append(.notNull)
             // SQLite should not use AUTOINCREMENT for INTEGER PRIMARY KEY since it is an alias for ROWID
-            constraints.append(.primaryKey(autoIncrement: false))
+            constraints.append(.primaryKey(default: nil))
         }
         
         return .columnDefinition(field, typeName, constraints)

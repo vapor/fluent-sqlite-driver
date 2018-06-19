@@ -310,7 +310,7 @@ final class SQLiteBenchmarkTests: XCTestCase {
         do {
             var databases = DatabasesConfig()
             try! databases.add(database: SQLiteDatabase(storage: .memory), as: .sqlite)
-            databases.enableReferebces(on: .sqlite)
+            databases.enableReferences(on: .sqlite)
             let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
             let dbs = try databases.resolve(on: BasicContainer(config: .init(), environment: .testing, services: .init(), on: group))
             sqlite = try dbs.requireDatabase(for: .sqlite).newConnectionPool(config: .init(maxConnections: 4), on: group)

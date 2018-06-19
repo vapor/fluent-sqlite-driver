@@ -68,6 +68,8 @@ extension SQLiteDatabase: QuerySupporting {
             select.joins = fluent.joins
             select.predicate = fluent.predicate
             select.orderBy = fluent.orderBy
+            select.limit = fluent.limit
+            select.offset = fluent.offset
             query = .select(select)
         case ._update:
             var update: SQLiteUpdate = .update(fluent.table)

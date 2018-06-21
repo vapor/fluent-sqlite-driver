@@ -22,7 +22,7 @@ extension SQLiteDatabase: SchemaSupporting {
     public typealias SchemaConstraint = SQLiteTableConstraint
     
     /// See `SchemaSupporting`.
-    public typealias SchemaReferenceAction = SQLiteConflictResolution
+    public typealias SchemaReferenceAction = SQLiteForeignKeyAction
     
     /// See `SchemaSupporting`.
     public static func schemaField(for type: Any.Type, isIdentifier: Bool, _ field: QueryField) -> SchemaField {

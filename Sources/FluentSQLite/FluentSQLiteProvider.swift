@@ -23,5 +23,4 @@ public final class FluentSQLiteProvider: Provider {
 }
 
 public typealias SQLiteCache = DatabaseKeyedCache<ConfiguredDatabase<SQLiteDatabase>>
-extension SQLiteDatabase: KeyedCacheSupporting { }
 extension SQLiteDatabase: Service { }

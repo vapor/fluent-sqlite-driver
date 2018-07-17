@@ -85,12 +85,12 @@ extension SQLiteDataTypeStaticRepresentable
 extension SQLiteDataConvertible
     where Self: RawRepresentable, Self.RawValue: SQLiteDataConvertible
 {
-    /// See `SQLiteDataConvertible.convertToSQLiteData()`
+    /// See `SQLiteDataConvertible`.
     public func convertToSQLiteData() throws -> SQLiteData {
         return try rawValue.convertToSQLiteData()
     }
 
-    /// See `SQLiteDataConvertible.convertFromSQLiteData(_:)`
+    /// See `SQLiteDataConvertible`.
     public static func convertFromSQLiteData(_ data: SQLiteData) throws -> Self {
         guard let e = try self.init(rawValue: .convertFromSQLiteData(data)) else {
             throw FluentSQLiteError(

@@ -1,4 +1,5 @@
 extension SQLiteDatabase: TransactionSupporting {
+    /// See `TransactionSupporting`.
     public static func transactionExecute<T>(_ transaction: @escaping (SQLiteConnection) throws -> Future<T>, on conn: SQLiteConnection) -> Future<T> {
         return conn.query("BEGIN TRANSACTION").flatMap { results in
             return try transaction(conn).flatMap { res in

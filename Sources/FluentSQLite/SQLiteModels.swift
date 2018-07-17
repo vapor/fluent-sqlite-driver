@@ -1,9 +1,12 @@
 /// A SQLite database model.
 /// See `Fluent.Model`.
-public protocol SQLiteModel: Model where Self.Database == SQLiteDatabase, Self.ID == Int {
+public protocol SQLiteModel: _SQLiteModel where Self.ID == Int {
     /// This SQLite Model's unique identifier.
     var id: ID? { get set }
 }
+
+/// Base SQLite model protocol.
+public protocol _SQLiteModel: SQLiteTable, Model where Self.Database == SQLiteDatabase { }
 
 extension SQLiteModel {
     /// See `Model`
@@ -16,7 +19,7 @@ public protocol SQLitePivot: Pivot, SQLiteModel { }
 
 /// A SQLite database model.
 /// See `Fluent.Model`.
-public protocol SQLiteUUIDModel: Model where Self.Database == SQLiteDatabase, Self.ID == UUID {
+public protocol SQLiteUUIDModel: _SQLiteModel where Self.ID == UUID {
     /// This SQLite Model's unique identifier.
     var id: UUID? { get set }
 }
@@ -32,7 +35,7 @@ public protocol SQLiteUUIDPivot: Pivot, SQLiteUUIDModel { }
 
 /// A SQLite database model.
 /// See `Fluent.Model`.
-public protocol SQLiteStringModel: Model where Self.Database == SQLiteDatabase, Self.ID == String {
+public protocol SQLiteStringModel: _SQLiteModel where Self.ID == String {
     /// This SQLite Model's unique identifier.
     var id: String? { get set }
 }
@@ -49,3 +52,6 @@ public protocol SQLiteStringPivot: Pivot, SQLiteStringModel { }
 /// A SQLite database migration.
 /// See `Fluent.Migration`.
 public protocol SQLiteMigration: Migration where Self.Database == SQLiteDatabase { }
+
+/// See `SQLTable`.
+public protocol SQLiteTable: SQLTable { }

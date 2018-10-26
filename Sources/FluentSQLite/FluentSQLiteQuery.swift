@@ -30,7 +30,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
     public var statement: Statement
     public var table: TableIdentifier
     public var keys: [SelectExpression]
-    public var values: [String : Expression]
+    public var values: [[String : Expression]]
     public var joins: [Join]
     public var predicate: Expression?
     public var orderBy: [OrderBy]
@@ -44,7 +44,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
             statement: statement,
             table: table,
             keys: [],
-            values: [:],
+            values: [],
             joins: [],
             predicate: nil,
             orderBy: [],

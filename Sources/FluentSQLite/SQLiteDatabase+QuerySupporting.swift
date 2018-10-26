@@ -44,22 +44,15 @@ extension SQLiteDatabase: QuerySupporting {
         switch fluent.statement {
         case ._insert:
             var insert: SQLiteInsert = .insert(fluent.table)
-            var values: [SQLiteExpression] = []
-            fluent.values.forEach { row in
-                // filter out all `NULL` values, no need to insert them since
-                // they could override default values that we want to keep
-                switch row.value {
-                case ._literal(let literal):
-                    switch literal {
-                    case ._null: return
-                    default: break
-                    }
-                default: break
+            
+            if let firstRow = fluent.values.first {
+                insert.columns.append(contentsOf: firstRow.columns())
+                fluent.values.forEach { value in
+                    let row = value.sqliteExpression()
+                    insert.values.append(row)
                 }
-                insert.columns.append(.column(nil, .identifier(row.key)))
-                values.append(row.value)
             }
-            insert.values.append(values)
+            
             query = .insert(insert)
         case ._select:
             var select: SQLiteSelect = .select()
@@ -75,8 +68,8 @@ extension SQLiteDatabase: QuerySupporting {
         case ._update:
             var update: SQLiteUpdate = .update(fluent.table)
             update.table = fluent.table
-            update.values = fluent.values.map { val in
-                return (.identifier(val.key), val.value)
+            if let row = fluent.values.first {
+                update.values = row.map { val in (.identifier(val.key), val.value) }
             }
             update.predicate = fluent.predicate
             query = .update(update)
@@ -116,3 +109,22 @@ extension Int64: Int64Initializable { }
 extension UInt64: Int64Initializable { }
 extension Int32: Int64Initializable { }
 extension UInt32: Int64Initializable { }
+
+extension Dictionary where Key == String, Value == FluentSQLiteQuery.Expression {
+    func sqliteExpression() -> [SQLiteExpression] {
+        return self.map { pair -> SQLiteExpression in
+            switch pair.value {
+            case ._literal(let literal):
+                switch literal {
+                case ._null: return .literal(.default)
+                default: return pair.value
+                }
+            default: return pair.value
+            }
+        }
+    }
+    
+    func columns() -> [SQLiteColumnIdentifier] {
+        return self.map { .column(nil, .identifier($0.key)) }
+    }
+}

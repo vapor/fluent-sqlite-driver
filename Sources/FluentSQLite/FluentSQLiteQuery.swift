@@ -19,6 +19,7 @@ public enum FluentSQLiteQueryStatement: FluentSQLQueryStatement {
 
 public struct FluentSQLiteQuery: FluentSQLQuery {
     public typealias Statement = FluentSQLiteQueryStatement
+    public typealias Distinct = SQLiteDistinct
     public typealias TableIdentifier = SQLiteTableIdentifier
     public typealias Expression = SQLiteExpression
     public typealias SelectExpression = SQLiteSelectExpression
@@ -28,6 +29,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
     public typealias RowDecoder = SQLiteRowDecoder
     
     public var statement: Statement
+    public var distinct: Distinct
     public var table: TableIdentifier
     public var keys: [SelectExpression]
     public var values: [String : Expression]
@@ -42,6 +44,7 @@ public struct FluentSQLiteQuery: FluentSQLQuery {
     public static func query(_ statement: Statement, _ table: TableIdentifier) -> FluentSQLiteQuery {
         return .init(
             statement: statement,
+            distinct: distinct,
             table: table,
             keys: [],
             values: [:],

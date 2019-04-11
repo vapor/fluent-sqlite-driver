@@ -1,10 +1,8 @@
-#if os(Linux)
-
 import XCTest
-@testable import FluentSQLiteTests
 
-XCTMain([
-    testCase(SQLiteBenchmarkTests.allTests),
-])
+import FluentSQLiteDriverTests
 
-#endif
+var tests = [XCTestCaseEntry]()
+tests += FluentSQLiteDriverTests.__allTests()
+
+XCTMain(tests)

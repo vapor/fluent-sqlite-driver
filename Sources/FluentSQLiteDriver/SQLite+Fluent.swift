@@ -2,12 +2,21 @@ import NIOKit
 import FluentSQL
 
 public final class SQLiteConnectionSource: ConnectionPoolSource {
+    public enum Storage {
+        case memory
+        case connection(SQLiteConnection.Storage)
+    }
     public var eventLoop: EventLoop
     private let storage: SQLiteConnection.Storage
     private let threadPool: NIOThreadPool
 
-    public init(storage: SQLiteConnection.Storage, threadPool: NIOThreadPool, on eventLoop: EventLoop) {
-        self.storage = storage
+    public init(storage: Storage, threadPool: NIOThreadPool, on eventLoop: EventLoop) {
+        switch storage {
+        case .memory:
+            self.storage = .file(path: "file:\(ObjectIdentifier(threadPool))?mode=memory&cache=shared")
+        case .connection(let storage):
+            self.storage = storage
+        }
         self.threadPool = threadPool
         self.eventLoop = eventLoop
     }

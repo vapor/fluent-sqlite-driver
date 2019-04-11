@@ -87,6 +87,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testUniqueFields()
     }
 
+    func testSharing() throws {
+        try! self.benchmarker.testSharing()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.connectionPool)
     }
@@ -98,7 +102,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
         let db = SQLiteConnectionSource(storage: .memory, threadPool: self.threadPool, on: self.eventLoopGroup.next())
-        self.connectionPool = ConnectionPool(config: .init(maxConnections: 1), source: db)
+        self.connectionPool = ConnectionPool(config: .init(maxConnections: 8), source: db)
     }
 
     override func tearDown() {

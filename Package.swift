@@ -1,26 +1,25 @@
-// swift-tools-version:4.0
+// swift-tools-version:5.0
 import PackageDescription
 
 let package = Package(
-    name: "FluentSQLite",
+    name: "fluent-sqlite-driver",
     products: [
-        .library(name: "FluentSQLite", targets: ["FluentSQLite"]),
+        .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),
     ],
     dependencies: [
-        // 🌎 Utility package containing tools for byte manipulation, Codable, OS APIs, and debugging.
-        .package(url: "https://github.com/vapor/core.git", from: "3.0.0"),
-        
-        // ✳️ Swift ORM framework (queries, models, and relations) for building NoSQL and SQL database integrations.
-        .package(url: "https://github.com/vapor/fluent.git", from: "3.0.0"),
-
-        // 📦 Dependency injection / inversion of control framework.
-        .package(url: "https://github.com/vapor/service.git", from: "1.0.0"),
-
-        // 🔵 SQLite 3 wrapper for Swift
-        .package(url: "https://github.com/vapor/sqlite.git", from: "3.0.0"),
+        .package(url: "https://github.com/vapor/fluent-kit.git", .branch("master")),
+        .package(url: "https://github.com/vapor/nio-sqlite.git", .branch("master")),
+        .package(url: "https://github.com/vapor/sql.git", .branch("master")),
+        .package(url: "https://github.com/vapor/nio-kit.git", .branch("master")),
     ],
     targets: [
-        .target(name: "FluentSQLite", dependencies: ["Async", "FluentSQL", "Service", "SQLite"]),
-        .testTarget(name: "FluentSQLiteTests", dependencies: ["FluentBenchmark", "FluentSQLite", "SQLite"]),
+        .target(name: "FluentSQLiteDriver", dependencies: [
+            "FluentKit",
+            "FluentSQL",
+            "NIOKit",
+            "NIOSQLite",
+            "SQLKit"
+        ]),
+        .testTarget(name: "FluentSQLiteDriverTests", dependencies: ["FluentBenchmark", "FluentSQLiteDriver"]),
     ]
 )

@@ -1,17 +1,51 @@
 import NIOKit
 import FluentSQL
 
-public final class SQLiteConnectionSource: ConnectionPoolSource {
+extension DatabaseID {
+    public static var sqlite: DatabaseID {
+        return .init(string: "sqlite")
+    }
+}
+
+public struct SQLiteConfiguration {
     public enum Storage {
         case memory
         case connection(SQLiteConnection.Storage)
     }
+
+    public var storage: Storage
+
+    public init(storage: Storage) {
+        self.storage = storage
+    }
+}
+
+extension Databases {
+    public mutating func sqlite(
+        configuration: SQLiteConfiguration = .init(storage: .memory),
+        threadPool: NIOThreadPool,
+        poolConfiguration: ConnectionPoolConfig = .init(),
+        as id: DatabaseID = .sqlite,
+        isDefault: Bool = true
+    ) {
+        let db = SQLiteConnectionSource(
+            configuration: configuration,
+            threadPool: threadPool,
+            on: self.eventLoop
+        )
+        let pool = ConnectionPool(config: poolConfiguration, source: db)
+        self.add(pool, as: id, isDefault: isDefault)
+    }
+}
+
+public final class SQLiteConnectionSource: ConnectionPoolSource {
+
     public var eventLoop: EventLoop
     private let storage: SQLiteConnection.Storage
     private let threadPool: NIOThreadPool
 
-    public init(storage: Storage, threadPool: NIOThreadPool, on eventLoop: EventLoop) {
-        switch storage {
+    public init(configuration: SQLiteConfiguration, threadPool: NIOThreadPool, on eventLoop: EventLoop) {
+        switch configuration.storage {
         case .memory:
             self.storage = .file(path: "file:\(ObjectIdentifier(threadPool))?mode=memory&cache=shared")
         case .connection(let storage):

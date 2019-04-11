@@ -97,7 +97,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
     override func setUp() {
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
-        let db = SQLiteConnectionSource(storage: .memory, threadPool: self.threadPool, on: self.eventLoopGroup.next())
+        let db = SQLiteConnectionSource(configuration: .init(storage: .memory), threadPool: self.threadPool, on: self.eventLoopGroup.next())
         self.connectionPool = ConnectionPool(config: .init(maxConnections: 8), source: db)
     }
 

@@ -4,8 +4,8 @@ public struct SQLiteDataEncoder {
     public init() { }
 
     public func encode(_ type: Encodable) throws -> SQLiteData {
-        if let custom = type as? SQLiteDataConvertible {
-            return custom.sqliteData ?? .null
+        if let custom = try _encode(type, codingPath: []) {
+            return custom
         } else {
             do {
                 let encoder = _Encoder()
@@ -15,7 +15,6 @@ public struct SQLiteDataEncoder {
                 let json = JSONEncoder()
                 let data = try json.encode(Wrapper(type))
                 var buffer = ByteBufferAllocator().buffer(capacity: data.count)
-                #warning("TODO: use nio foundation compat write")
                 buffer.writeBytes(data)
                 return SQLiteData.blob(buffer)
             }
@@ -52,7 +51,6 @@ public struct SQLiteDataEncoder {
 
     struct DoJSON: Error {}
 
-    #warning("TODO: move to encodable kit")
     struct Wrapper: Encodable {
         let encodable: Encodable
         init(_ encodable: Encodable) {
@@ -110,73 +108,29 @@ public struct SQLiteDataEncoder {
         }
 
         mutating func encodeNil() throws {
-            // data already null
-        }
-
-        mutating func encode(_ value: Bool) throws {
-            switch value {
-            case true:
-                self.encoder.data = SQLiteData.integer(1)
-            case false:
-                self.encoder.data = SQLiteData.integer(0)
-            }
-        }
-
-        mutating func encode(_ value: String) throws {
-            self.encoder.data = SQLiteData.text(value)
-        }
-
-        mutating func encode(_ value: Double) throws {
-            self.encoder.data = SQLiteData.float(value)
-        }
-
-        mutating func encode(_ value: Float) throws {
-            self.encoder.data = SQLiteData.float(.init(value))
-        }
-
-        mutating func encode(_ value: Int) throws {
-            self.encoder.data = SQLiteData.integer(value)
-        }
-
-        mutating func encode(_ value: Int8) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: Int16) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: Int32) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: Int64) throws {
-            fatalError()
-            // self.encoder.data = SQLiteData(int64: value)
-        }
-
-        mutating func encode(_ value: UInt) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: UInt8) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: UInt16) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: UInt32) throws {
-            fatalError()
-        }
-
-        mutating func encode(_ value: UInt64) throws {
-            fatalError()
+            self.encoder.data = .null
         }
 
         mutating func encode<T>(_ value: T) throws where T : Encodable {
-            try value.encode(to: self.encoder)
+            if let data = try _encode(value, codingPath: self.codingPath) {
+                self.encoder.data = data
+            } else {
+                try value.encode(to: self.encoder)
+            }
         }
+    }
+}
+
+private func _encode(_ value: Encodable, codingPath: [CodingKey]) throws -> SQLiteData? {
+    if let value = value as? SQLiteDataConvertible {
+        guard let data = value.sqliteData else {
+            throw EncodingError.invalidValue(value, .init(
+                codingPath: codingPath,
+                debugDescription: "Could not encode \(value) to SQLite data"
+            ))
+        }
+        return data
+    } else {
+        return nil
     }
 }

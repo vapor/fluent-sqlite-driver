@@ -120,15 +120,23 @@ private struct SQLiteDialect: SQLDialect {
 }
 
 extension SQLiteRow: DatabaseOutput {
+    public func contains(field: String) -> Bool {
+        return self.column(field) != nil
+    }
+
     public func decode<T>(field: String, as type: T.Type) throws -> T where T : Decodable {
         return try self.decode(column: field, as: T.self)
     }
 }
 
 extension SQLiteRow: SQLRow {
+    public func contains(column: String) -> Bool {
+        return self.column(column) != nil
+    }
+
     public func decode<D>(column: String, as type: D.Type) throws -> D where D : Decodable {
         guard let data = self.column(column) else {
-            fatalError()
+            fatalError("no value found for \(column)")
         }
         return try SQLiteDataDecoder().decode(D.self, from: data)
     }
@@ -182,6 +190,10 @@ private struct LastInsertRow: DatabaseOutput {
     }
 
     let lastAutoincrementID: Int64?
+
+    func contains(field: String) -> Bool {
+        return field == "fluentID"
+    }
 
     func decode<T>(field: String, as type: T.Type) throws -> T where T : Decodable {
         #warning("TODO: fixme, better logic")

@@ -87,6 +87,18 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testAsyncCreate()
     }
 
+    func testSoftDelete() throws {
+        try self.benchmarker.testSoftDelete()
+    }
+
+    func testTimestampable() throws {
+        try self.benchmarker.testTimestampable()
+    }
+
+    func testLifecycleHooks() throws {
+        try self.benchmarker.testLifecycleHooks()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.connectionPool)
     }

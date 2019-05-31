@@ -1,3 +1,4 @@
+import NIO
 import Foundation
 
 public struct SQLiteDataEncoder {

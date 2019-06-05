@@ -103,6 +103,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testLifecycleHooks()
     }
 
+    func testSort() throws {
+        try self.benchmarker.testSort()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.connectionPool)
     }

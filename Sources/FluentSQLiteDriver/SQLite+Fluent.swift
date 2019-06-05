@@ -141,6 +141,14 @@ extension SQLiteRow: SQLRow {
     }
 }
 
+import Foundation
+
+extension SQLiteError: LocalizedError {
+    public var errorDescription: String? {
+        return self.description
+    }
+}
+
 extension SQLiteConnection: Database {
     public func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         return closure(self)

@@ -1,4 +1,4 @@
-// swift-tools-version:5.0
+// swift-tools-version:5.1
 import PackageDescription
 
 let package = Package(
@@ -7,9 +7,9 @@ let package = Package(
         .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", .branch("master")),
+        .package(url: "https://github.com/vapor/fluent-kit.git", .branch("alpha")),
         .package(url: "https://github.com/vapor/nio-sqlite.git", .branch("master")),
-        .package(url: "https://github.com/vapor/sql.git", .branch("master")),
+        .package(url: "https://github.com/vapor/sql-kit.git", from: "3.0.0-alpha"),
         .package(url: "https://github.com/vapor/nio-kit.git", .branch("master")),
     ],
     targets: [

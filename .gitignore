@@ -7,4 +7,5 @@ Database
 database.db
 Package.resolved
 DerivedData
+.swiftpm
 

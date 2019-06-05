@@ -39,7 +39,6 @@ extension Databases {
 }
 
 public final class SQLiteConnectionSource: ConnectionPoolSource {
-
     public var eventLoop: EventLoop
     private let storage: SQLiteConnection.Storage
     private let threadPool: NIOThreadPool
@@ -151,6 +150,7 @@ extension SQLiteConnection: Database {
         let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
         var serializer = SQLSerializer(dialect: SQLiteDialect())
         sql.serialize(to: &serializer)
+        print(serializer.sql)
         return self.query(serializer.sql, serializer.binds.map { encodable in
             return try! SQLiteDataEncoder().encode(encodable)
         }) { row in
@@ -166,14 +166,14 @@ extension SQLiteConnection: Database {
     }
 
     public func execute(_ schema: DatabaseSchema) -> EventLoopFuture<Void> {
-        return self.sqlQuery(SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)) { row in
+        return self.execute(sql: SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)) { row in
             fatalError("unexpected output")
         }
     }
 }
 
 extension SQLiteConnection: SQLDatabase {
-    public func sqlQuery(_ query: SQLExpression, _ onRow: @escaping (SQLRow) throws -> ()) -> EventLoopFuture<Void> {
+    public func execute(sql query: SQLExpression, _ onRow: @escaping (SQLRow) throws -> ()) -> EventLoopFuture<Void> {
         var serializer = SQLSerializer(dialect: SQLiteDialect())
         query.serialize(to: &serializer)
         return self.query(serializer.sql, serializer.binds.map { encodable in
@@ -204,7 +204,7 @@ private struct LastInsertRow: DatabaseOutput {
             } else {
                 fatalError()
             }
-        default: throw ModelError.missingField(name: field)
+        default: throw FluentError.missingField(name: field)
         }
     }
 }

@@ -35,8 +35,12 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testEagerLoadParentJoin()
     }
 
-    func testEagerLoadJSON() throws {
-        try self.benchmarker.testEagerLoadJSON()
+    func testEagerLoadParentJSON() throws {
+        try self.benchmarker.testEagerLoadParentJSON()
+    }
+
+    func testEagerLoadChildrenJSON() throws {
+        try self.benchmarker.testEagerLoadChildrenJSON()
     }
 
     func testMigrator() throws {
@@ -97,6 +101,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
 
     func testLifecycleHooks() throws {
         try self.benchmarker.testLifecycleHooks()
+    }
+
+    func testSort() throws {
+        try self.benchmarker.testSort()
     }
 
     var benchmarker: FluentBenchmarker {

@@ -107,6 +107,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testSort()
     }
 
+    func testUUIDModel() throws {
+        try self.benchmarker.testUUIDModel()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.connectionPool)
     }

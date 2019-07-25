@@ -12,7 +12,10 @@ extension SQLiteConnection: Database {
         }.flatMapThrowing {
             switch query.action {
             case .create:
-                let row = LastInsertRow(lastAutoincrementID: self.lastAutoincrementID)
+                let row = LastInsertRow(
+                    idName: query.idFieldName,
+                    lastAutoincrementID: self.lastAutoincrementID
+                )
                 try onOutput(row)
             default: break
             }
@@ -33,20 +36,27 @@ private struct LastInsertRow: DatabaseOutput {
     }
 
     let lastAutoincrementID: Int64?
+    let idName: String
+
+    init(idName: String, lastAutoincrementID: Int64?) {
+        self.idName = idName
+        self.lastAutoincrementID = lastAutoincrementID
+    }
 
     func contains(field: String) -> Bool {
-        return field == "fluentID"
+        return field == self.idName
     }
 
     func decode<T>(field: String, as type: T.Type) throws -> T where T : Decodable {
         switch field {
-        case "fluentID":
-            if T.self is Int.Type {
+        case self.idName:
+            if T.self is Int?.Type || T.self is Int.Type {
                 return Int(self.lastAutoincrementID!) as! T
             } else {
-                fatalError()
+                fatalError("cannot decode last autoincrement type: \(T.self)")
             }
-        default: throw FluentError.missingField(name: field)
+        default:
+            throw FluentError.missingField(name: field)
         }
     }
 }

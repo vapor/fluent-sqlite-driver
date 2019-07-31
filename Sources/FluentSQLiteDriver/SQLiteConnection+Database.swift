@@ -34,6 +34,10 @@ private struct LastInsertRow: DatabaseOutput {
 
     let lastAutoincrementID: Int64?
 
+    init(lastAutoincrementID: Int64?) {
+        self.lastAutoincrementID = lastAutoincrementID
+    }
+
     func contains(field: String) -> Bool {
         return field == "fluentID"
     }
@@ -41,12 +45,13 @@ private struct LastInsertRow: DatabaseOutput {
     func decode<T>(field: String, as type: T.Type) throws -> T where T : Decodable {
         switch field {
         case "fluentID":
-            if T.self is Int.Type {
+            if T.self is Int?.Type || T.self is Int.Type {
                 return Int(self.lastAutoincrementID!) as! T
             } else {
-                fatalError()
+                fatalError("cannot decode last autoincrement type: \(T.self)")
             }
-        default: throw FluentError.missingField(name: field)
+        default:
+            throw FluentError.missingField(name: field)
         }
     }
 }

@@ -1,6 +1,7 @@
 import FluentBenchmark
 import FluentSQLiteDriver
 import XCTest
+import Logging
 
 final class FluentSQLiteDriverTests: XCTestCase {
     func testAll() throws {
@@ -111,6 +112,18 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testUUIDModel()
     }
 
+    func testNewModelDecode() throws {
+        try self.benchmarker.testNewModelDecode()
+    }
+
+    func testSiblingsAttach() throws {
+        try self.benchmarker.testSiblingsAttach()
+    }
+
+    func testSiblingsEagerLoad() throws {
+        try self.benchmarker.testSiblingsEagerLoad()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.connectionPool)
     }
@@ -119,6 +132,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
     var eventLoopGroup: EventLoopGroup!
 
     override func setUp() {
+        XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
         let db = SQLiteConnectionSource(configuration: .init(storage: .memory), threadPool: self.threadPool, on: self.eventLoopGroup.next())
@@ -134,3 +148,12 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.eventLoopGroup = nil
     }
 }
+
+let isLoggingConfigured: Bool = {
+    LoggingSystem.bootstrap { label in
+        var handler = StreamLogHandler.standardOutput(label: label)
+        handler.logLevel = .debug
+        return handler
+    }
+    return true
+}()

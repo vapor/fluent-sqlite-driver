@@ -16,6 +16,8 @@ extension FluentSQLiteDriverTests {
         ("testDelete", testDelete),
         ("testEagerLoadChildren", testEagerLoadChildren),
         ("testEagerLoadChildrenJSON", testEagerLoadChildrenJSON),
+        ("testEagerLoadOptionalJoinParent", testEagerLoadOptionalJoinParent),
+        ("testEagerLoadOptionalParent", testEagerLoadOptionalParent),
         ("testEagerLoadParent", testEagerLoadParent),
         ("testEagerLoadParentJoin", testEagerLoadParentJoin),
         ("testEagerLoadParentJSON", testEagerLoadParentJSON),
@@ -25,13 +27,17 @@ extension FluentSQLiteDriverTests {
         ("testMigrator", testMigrator),
         ("testMigratorError", testMigratorError),
         ("testNestedModel", testNestedModel),
+        ("testNewModelDecode", testNewModelDecode),
         ("testNullifyField", testNullifyField),
         ("testRead", testRead),
+        ("testSiblingsAttach", testSiblingsAttach),
+        ("testSiblingsEagerLoad", testSiblingsEagerLoad),
         ("testSoftDelete", testSoftDelete),
         ("testSort", testSort),
         ("testTimestampable", testTimestampable),
         ("testUniqueFields", testUniqueFields),
         ("testUpdate", testUpdate),
+        ("testUUIDModel", testUUIDModel),
     ]
 }
 

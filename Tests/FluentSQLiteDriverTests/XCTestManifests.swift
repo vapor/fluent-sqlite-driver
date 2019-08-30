@@ -16,6 +16,7 @@ extension FluentSQLiteDriverTests {
         ("testDelete", testDelete),
         ("testEagerLoadChildren", testEagerLoadChildren),
         ("testEagerLoadChildrenJSON", testEagerLoadChildrenJSON),
+        ("testEagerLoadOptionalChildren", testEagerLoadOptionalChildren),
         ("testEagerLoadOptionalJoinParent", testEagerLoadOptionalJoinParent),
         ("testEagerLoadOptionalParent", testEagerLoadOptionalParent),
         ("testEagerLoadParent", testEagerLoadParent),

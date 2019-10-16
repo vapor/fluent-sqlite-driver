@@ -124,6 +124,14 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testSiblingsEagerLoad()
     }
 
+    func testMultipleJoinSameTable() throws {
+        try self.benchmarker.testMultipleJoinSameTable()
+    }
+
+    func testOptionalParent() throws {
+        try self.benchmarker.testOptionalParent()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.connectionPool)
     }

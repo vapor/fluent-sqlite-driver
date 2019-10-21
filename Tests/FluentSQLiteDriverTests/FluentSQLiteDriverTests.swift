@@ -133,23 +133,28 @@ final class FluentSQLiteDriverTests: XCTestCase {
     }
 
     var benchmarker: FluentBenchmarker {
-        return .init(database: self.connectionPool)
+        return .init(database: self.dbs.default())
     }
-    var connectionPool: ConnectionPool<SQLiteConnectionSource>!
     var threadPool: NIOThreadPool!
     var eventLoopGroup: EventLoopGroup!
+    var dbs: Databases!
 
     override func setUp() {
         XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
-        let db = SQLiteConnectionSource(configuration: .init(storage: .memory), threadPool: self.threadPool, on: self.eventLoopGroup.next())
-        self.connectionPool = ConnectionPool(config: .init(maxConnections: 8), source: db)
+        self.dbs = Databases()
+        self.dbs.sqlite(
+            configuration: .init(storage: .memory),
+            threadPool: self.threadPool,
+            poolConfiguration: .init(maxConnections: 8),
+            eventLoop: self.eventLoopGroup.next()
+        )
     }
 
     override func tearDown() {
-        try! self.connectionPool.close().wait()
-        self.connectionPool = nil
+        self.dbs.shutdown()
+        self.dbs = nil
         try! self.threadPool.syncShutdownGracefully()
         self.threadPool = nil
         try! self.eventLoopGroup.syncShutdownGracefully()

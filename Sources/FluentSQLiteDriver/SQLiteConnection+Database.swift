@@ -1,11 +1,11 @@
 import FluentSQL
 
-extension SQLiteConnection: Database {
-    public func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        return closure(self)
+extension SQLiteConnection: DatabaseDriver {
+    public var eventLoopGroup: EventLoopGroup {
+        return self.eventLoop
     }
-
-    public func execute(_ query: DatabaseQuery, _ onOutput: @escaping (DatabaseOutput) throws -> ()) -> EventLoopFuture<Void> {
+    
+    public func execute(_ query: DatabaseQuery, eventLoop: EventLoopPreference, _ onOutput: @escaping (DatabaseOutput) throws -> ()) -> EventLoopFuture<Void> {
         let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
         return self.execute(sql: sql) { row in
             try onOutput(row as! DatabaseOutput)
@@ -18,12 +18,20 @@ extension SQLiteConnection: Database {
             }
         }
     }
-
-    public func execute(_ schema: DatabaseSchema) -> EventLoopFuture<Void> {
+    
+    public func execute(_ schema: DatabaseSchema, eventLoop: EventLoopPreference) -> EventLoopFuture<Void> {
         let sql = SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)
         return self.execute(sql: sql) { row in
             fatalError("unexpected output")
         }
+    }
+    
+    public func withConnection<T>(eventLoop: EventLoopPreference, _ closure: @escaping (DatabaseDriver) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        return closure(self)
+    }
+    
+    public func shutdown() {
+        try! self.close().wait()
     }
 }
 

@@ -1,0 +1,28 @@
+name: test
+on:
+- pull_request
+jobs:
+  bionic:
+    container: 
+      image: vapor/swift:5.1-bionic
+    runs-on: ubuntu-latest
+    steps:
+    - run: apt update -y; apt install -y libsqlite3-dev
+    - uses: actions/checkout@master
+    - run: swift test
+  xenial:
+    container: 
+      image: vapor/swift:5.1-xenial
+    runs-on: ubuntu-latest
+    steps:
+    - run: apt update -y; apt install -y libsqlite3-dev
+    - uses: actions/checkout@master
+    - run: swift test
+  thread:
+    container: 
+      image: vapor/swift:5.1
+    runs-on: ubuntu-latest
+    steps:
+    - run: apt update -y; apt install -y libsqlite3-dev
+    - uses: actions/checkout@master
+    - run: swift test --sanitize=thread

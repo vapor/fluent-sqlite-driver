@@ -7,21 +7,21 @@ extension DatabaseID {
 }
 
 extension Databases {
-    public mutating func sqlite(
+    public func sqlite(
         configuration: SQLiteConfiguration = .init(storage: .memory),
         threadPool: NIOThreadPool,
-        poolConfiguration: ConnectionPoolConfig = .init(),
-        logger: Logger = .init(label: "codes.vapor.fluent.db.sqlite"),
+        poolConfiguration: ConnectionPoolConfiguration = .init(),
+        logger: Logger = .init(label: "codes.vapor.sqlite"),
         as id: DatabaseID = .sqlite,
-        isDefault: Bool = true
+        isDefault: Bool = true,
+        on eventLoopGroup: EventLoopGroup
     ) {
         let db = SQLiteConnectionSource(
             configuration: configuration,
             threadPool: threadPool,
-            logger: logger,
-            on: self.eventLoop
+            logger: logger
         )
-        let pool = ConnectionPool(config: poolConfiguration, source: db)
-        self.add(pool, as: id, isDefault: isDefault)
+        let pool = ConnectionPool(configuration: poolConfiguration, source: db, on: eventLoopGroup)
+        self.add(SQLiteDatabaseDriver(pool: pool), logger: logger, as: id, isDefault: isDefault)
     }
 }

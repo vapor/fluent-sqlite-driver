@@ -148,7 +148,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
             configuration: .init(storage: .memory),
             threadPool: self.threadPool,
             poolConfiguration: .init(maxConnections: 8),
-            eventLoop: self.eventLoopGroup.next()
+            on: self.eventLoopGroup
         )
     }
 

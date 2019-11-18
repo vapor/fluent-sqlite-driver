@@ -3,7 +3,7 @@
 
 // TODO: deprecate
 extension Databases {
-    public func sqlite(
+    public mutating func sqlite(
         configuration: SQLiteConfiguration = .init(storage: .memory),
         maxConnectionsPerEventLoop: Int = 1,
         as id: DatabaseID = .default

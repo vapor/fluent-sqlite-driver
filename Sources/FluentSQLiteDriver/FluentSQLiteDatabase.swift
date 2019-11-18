@@ -11,7 +11,9 @@ extension _FluentSQLiteDatabase: Database {
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
         do {
-            data = try sqliteEncode(binds)
+            data = try binds.map { encodable in
+                try SQLiteDataEncoder().encode(encodable)
+            }
         } catch {
             return self.eventLoop.makeFailedFuture(error)
         }
@@ -36,7 +38,9 @@ extension _FluentSQLiteDatabase: Database {
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
         do {
-            data = try sqliteEncode(binds)
+            data = try binds.map { encodable in
+                try SQLiteDataEncoder().encode(encodable)
+            }
         } catch {
             return self.eventLoop.makeFailedFuture(error)
         }
@@ -77,12 +81,6 @@ extension _FluentSQLiteDatabase: SQLiteDatabase {
         _ onRow: @escaping (SQLiteRow) -> Void
     ) -> EventLoopFuture<Void> {
         self.database.query(query, binds, logger: logger, onRow)
-    }
-}
-
-private func sqliteEncode(_ binds: [Encodable]) throws -> [SQLiteData] {
-    try binds.map { encodable in
-        try SQLiteDataEncoder().encode(encodable)
     }
 }
 

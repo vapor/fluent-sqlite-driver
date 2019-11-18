@@ -100,8 +100,8 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testTimestampable()
     }
 
-    func testLifecycleHooks() throws {
-        try self.benchmarker.testLifecycleHooks()
+    func testModelMiddleware() throws {
+        try self.benchmarker.testModelMiddleware()
     }
 
     func testSort() throws {
@@ -131,10 +131,26 @@ final class FluentSQLiteDriverTests: XCTestCase {
     func testOptionalParent() throws {
         try self.benchmarker.testOptionalParent()
     }
+    
+    func testFieldFilter() throws {
+        try self.benchmarker.testFieldFilter()
+    }
+    
+    func testJoinedFieldFilter() throws {
+        try self.benchmarker.testJoinedFieldFilter()
+    }
 
     var benchmarker: FluentBenchmarker {
-        return .init(database: self.dbs.default())
+        return .init(database: self.database)
     }
+    
+    var database: Database {
+        self.dbs.database(
+            logger: .init(label: "codes.vapor.test"),
+            on: self.eventLoopGroup.next()
+        )!
+    }
+    
     var threadPool: NIOThreadPool!
     var eventLoopGroup: EventLoopGroup!
     var dbs: Databases!
@@ -143,12 +159,11 @@ final class FluentSQLiteDriverTests: XCTestCase {
         XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
-        self.dbs = Databases()
+        self.threadPool.start()
+        self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
         self.dbs.sqlite(
             configuration: .init(storage: .memory),
-            threadPool: self.threadPool,
-            poolConfiguration: .init(maxConnections: 8),
-            on: self.eventLoopGroup
+            maxConnectionsPerEventLoop: 2
         )
     }
 

@@ -8,15 +8,16 @@ struct _FluentSQLiteDatabase {
 extension _FluentSQLiteDatabase: Database {
     func execute(query: DatabaseQuery, onRow: @escaping (DatabaseRow) -> ()) -> EventLoopFuture<Void> {
         let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
-        let serialized: (sql: String, binds: [SQLiteData])
+        let (string, binds) = self.serialize(sql)
+        let data: [SQLiteData]
         do {
-            serialized = try sqliteSerialize(sql)
+            data = try sqliteEncode(binds)
         } catch {
             return self.eventLoop.makeFailedFuture(error)
         }
         return self.database.withConnection { connection in
             connection.logging(to: self.logger)
-                .query(serialized.sql, serialized.binds, onRow)
+                .query(string, data, onRow)
                 .flatMap {
                     switch query.action {
                     case .create:
@@ -32,13 +33,14 @@ extension _FluentSQLiteDatabase: Database {
     
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
         let sql = SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)
-        let serialized: (sql: String, binds: [SQLiteData])
+        let (string, binds) = self.serialize(sql)
+        let data: [SQLiteData]
         do {
-            serialized = try sqliteSerialize(sql)
+            data = try sqliteEncode(binds)
         } catch {
             return self.eventLoop.makeFailedFuture(error)
         }
-        return self.database.logging(to: self.logger).query(serialized.sql, serialized.binds) {
+        return self.database.logging(to: self.logger).query(string, data) {
             fatalError("Unexpected output: \($0)")
         }
     }
@@ -51,6 +53,10 @@ extension _FluentSQLiteDatabase: Database {
 }
 
 extension _FluentSQLiteDatabase: SQLDatabase {
+    var dialect: SQLDialect {
+        SQLiteDialect()
+    }
+    
     func execute(
         sql query: SQLExpression,
         _ onRow: @escaping (SQLRow) -> ()
@@ -74,14 +80,10 @@ extension _FluentSQLiteDatabase: SQLiteDatabase {
     }
 }
 
-private func sqliteSerialize(_ sql: SQLExpression) throws -> (String, [SQLiteData]) {
-    var serializer = SQLSerializer(dialect: SQLiteDialect())
-    sql.serialize(to: &serializer)
-    let binds: [SQLiteData]
-    binds = try serializer.binds.map { encodable in
-        return try SQLiteDataEncoder().encode(encodable)
+private func sqliteEncode(_ binds: [Encodable]) throws -> [SQLiteData] {
+    try binds.map { encodable in
+        try SQLiteDataEncoder().encode(encodable)
     }
-    return (serializer.sql, binds)
 }
 
 private struct LastInsertRow: DatabaseRow {

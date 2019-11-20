@@ -6,7 +6,7 @@ extension Databases {
     public func sqlite(
         configuration: SQLiteConfiguration = .init(storage: .memory),
         maxConnectionsPerEventLoop: Int = 1,
-        as id: DatabaseID = .default
+        as id: DatabaseID = .sqlite
     ) {
         self.use(
             .sqlite(

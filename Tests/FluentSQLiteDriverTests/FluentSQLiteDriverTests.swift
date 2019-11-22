@@ -139,6 +139,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
     func testJoinedFieldFilter() throws {
         try self.benchmarker.testJoinedFieldFilter()
     }
+    
+    func testSameChildrenFromKey() throws {
+        try self.benchmarker.testSameChildrenFromKey()
+    }
 
     var benchmarker: FluentBenchmarker {
         return .init(database: self.database)

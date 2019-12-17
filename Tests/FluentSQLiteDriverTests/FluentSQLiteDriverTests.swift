@@ -156,6 +156,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testSoftDeleteWithQuery()
     }
 
+    func testDuplicatedUniquePropertyName() throws {
+        try self.benchmarker.testDuplicatedUniquePropertyName()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.database)
     }

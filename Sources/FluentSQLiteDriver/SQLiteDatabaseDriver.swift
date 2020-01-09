@@ -1,7 +1,8 @@
 import FluentSQL
+import AsyncKit
 
 internal struct SQLiteDatabaseDriver: DatabaseDriver, SQLDatabase {
-    let pool: ConnectionPool<SQLiteConnectionSource>
+    let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
     
     var eventLoopGroup: EventLoopGroup {
         return self.pool.eventLoopGroup
@@ -12,7 +13,10 @@ internal struct SQLiteDatabaseDriver: DatabaseDriver, SQLDatabase {
         database: Database,
         onRow: @escaping (DatabaseRow) -> ()
     ) -> EventLoopFuture<Void> {
-        let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
+        guard let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query) else {
+            return database.eventLoop.future()
+        }
+
         let serialized: (sql: String, binds: [SQLiteData])
         do {
             serialized = try sqliteSerialize(sql)

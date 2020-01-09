@@ -3,11 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "fluent-sqlite-driver",
+    platforms: [
+        .macOS(.v10_14)
+    ],
     products: [
         .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.0.0-beta"),
+        .package(url: "https://github.com/vapor/fluent-kit.git", .branch("empty-set")),
         .package(url: "https://github.com/vapor/sqlite-kit.git", from: "4.0.0-beta"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
     ],

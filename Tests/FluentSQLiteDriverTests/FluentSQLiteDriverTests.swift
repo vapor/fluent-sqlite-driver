@@ -100,10 +100,6 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testTimestampable()
     }
 
-    func testLifecycleHooks() throws {
-        try self.benchmarker.testLifecycleHooks()
-    }
-
     func testSort() throws {
         try self.benchmarker.testSort()
     }
@@ -133,23 +129,23 @@ final class FluentSQLiteDriverTests: XCTestCase {
     }
 
     var benchmarker: FluentBenchmarker {
-        return .init(database: self.dbs.default())
+        return .init(database: self.db)
     }
     var threadPool: NIOThreadPool!
     var eventLoopGroup: EventLoopGroup!
     var dbs: Databases!
+    var db: Database {
+        self.dbs.database(logger: .init(label: "codes.vapor.test"), on: self.eventLoopGroup.next())!
+    }
 
     override func setUp() {
+        let configuration = SQLiteConfiguration(storage: .memory)
+
         XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
-        self.dbs = Databases()
-        self.dbs.sqlite(
-            configuration: .init(storage: .memory),
-            threadPool: self.threadPool,
-            poolConfiguration: .init(maxConnections: 8),
-            on: self.eventLoopGroup
-        )
+        self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
+        self.dbs.use(.sqlite(configuration: configuration, threadPool: self.threadPool, maxConnectionPerEventLoop: 1), as: .sqlite)
     }
 
     override func tearDown() {

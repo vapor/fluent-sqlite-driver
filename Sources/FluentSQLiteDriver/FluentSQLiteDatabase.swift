@@ -7,7 +7,10 @@ struct _FluentSQLiteDatabase {
 
 extension _FluentSQLiteDatabase: Database {
     func execute(query: DatabaseQuery, onRow: @escaping (DatabaseRow) -> ()) -> EventLoopFuture<Void> {
-        let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
+        guard let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query) else {
+            return self.eventLoop.future()
+        }
+
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
         do {

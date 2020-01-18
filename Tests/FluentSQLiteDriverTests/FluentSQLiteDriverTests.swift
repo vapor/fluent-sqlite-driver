@@ -160,6 +160,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testDuplicatedUniquePropertyName()
     }
 
+    func testRange() throws {
+        try self.benchmarker.testRange()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.database)
     }
@@ -181,10 +185,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.threadPool = .init(numberOfThreads: 2)
         self.threadPool.start()
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
-        self.dbs.sqlite(
-            configuration: .init(storage: .memory),
-            maxConnectionsPerEventLoop: 2
-        )
+        self.dbs.use(.sqlite(.memory), as: .sqlite)
     }
 
     override func tearDown() {

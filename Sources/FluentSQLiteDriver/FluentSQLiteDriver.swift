@@ -1,19 +1,9 @@
 extension DatabaseDriverFactory {
     public static func sqlite(
-        file: String,
+        _ configuration: SQLiteConfiguration = .init(storage: .memory),
         maxConnectionsPerEventLoop: Int = 1
-    ) -> DatabaseDriverFactory {
-        .sqlite(
-            configuration: .init(file: file),
-            maxConnectionsPerEventLoop: maxConnectionsPerEventLoop
-        )
-    }
-    
-    public static func sqlite(
-        configuration: SQLiteConfiguration = .init(storage: .memory),
-        maxConnectionsPerEventLoop: Int = 1
-    ) -> DatabaseDriverFactory {
-        return DatabaseDriverFactory { databases in
+    ) -> Self {
+        return .init { databases in
             let db = SQLiteConnectionSource(
                 configuration: configuration,
                 threadPool: databases.threadPool
@@ -25,6 +15,16 @@ extension DatabaseDriverFactory {
             )
             return _FluentSQLiteDriver(pool: pool)
         }
+    }
+}
+
+extension SQLiteConfiguration {
+    public static func file(_ path: String) -> Self {
+        .init(storage: .file(path: path))
+    }
+
+    public static var memory: Self {
+        .init(storage: .memory)
     }
 }
 

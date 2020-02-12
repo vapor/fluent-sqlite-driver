@@ -24,7 +24,7 @@ extension _FluentSQLiteDatabase: Database {
                     switch query.action {
                     case .create:
                         return connection.lastAutoincrementID().map {
-                            onRow(LastInsertRow(lastAutoincrementID: $0))
+                            onRow(LastInsertRow(idKey: query.idKey, lastAutoincrementID: $0))
                         }
                     default:
                         return self.eventLoop.makeSucceededFuture(())
@@ -86,29 +86,39 @@ extension _FluentSQLiteDatabase: SQLiteDatabase {
 
 private struct LastInsertRow: DatabaseRow {
     var description: String {
-        return ["id": lastAutoincrementID].description
+        ["id": self.lastAutoincrementID].description
     }
 
+    let idKey: String
     let lastAutoincrementID: Int
 
-    init(lastAutoincrementID: Int) {
-        self.lastAutoincrementID = lastAutoincrementID
-    }
-
     func contains(field: String) -> Bool {
-        return field == "fluentID"
+        field == self.idKey
     }
 
     func decode<T>(field: String, as type: T.Type, for database: Database) throws -> T where T : Decodable {
-        switch field {
-        case "fluentID":
-            if T.self is Int?.Type || T.self is Int.Type {
-                return self.lastAutoincrementID as! T
-            } else {
-                fatalError("cannot decode last autoincrement type: \(T.self)")
-            }
-        default:
-            throw FluentError.missingField(name: field)
+        guard field == self.idKey else {
+            fatalError("Cannot decode field from last insert row: \(field).")
+        }
+        if let autoincrementInitializable = T.self as? AutoincrementIDInitializable.Type {
+            return autoincrementInitializable.init(autoincrementID: self.lastAutoincrementID) as! T
+        } else {
+            fatalError("Unsupported database generated identiifer type: \(T.self)")
         }
     }
 }
+
+protocol AutoincrementIDInitializable {
+    init(autoincrementID: Int)
+}
+
+extension AutoincrementIDInitializable where Self: FixedWidthInteger {
+    init(autoincrementID: Int) {
+        self = numericCast(autoincrementID)
+    }
+}
+
+extension Int: AutoincrementIDInitializable { }
+extension UInt: AutoincrementIDInitializable { }
+extension Int64: AutoincrementIDInitializable { }
+extension UInt64: AutoincrementIDInitializable { }

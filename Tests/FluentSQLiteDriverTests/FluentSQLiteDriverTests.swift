@@ -164,6 +164,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testRange()
     }
 
+    func testNonstandardIDKey() throws {
+        try self.benchmarker.testNonstandardIDKey()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.database)
     }

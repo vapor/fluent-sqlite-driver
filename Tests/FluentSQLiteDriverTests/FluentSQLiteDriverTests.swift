@@ -32,10 +32,6 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testEagerLoadParent()
     }
 
-    func testEagerLoadParentJoin() throws {
-        try self.benchmarker.testEagerLoadParentJoin()
-    }
-
     func testEagerLoadParentJSON() throws {
         try self.benchmarker.testEagerLoadParentJSON()
     }
@@ -98,6 +94,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
 
     func testTimestampable() throws {
         try self.benchmarker.testTimestampable()
+    }
+
+    func testTransaction() throws {
+        try self.benchmarker.testTransaction()
     }
 
     func testModelMiddleware() throws {
@@ -164,8 +164,16 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testRange()
     }
 
+    func testRelationMethods() throws {
+        try self.benchmarker.testRelationMethods()
+    }
+
     func testNonstandardIDKey() throws {
         try self.benchmarker.testNonstandardIDKey()
+    }
+
+    func testGroup() throws {
+        try self.benchmarker.testGroup()
     }
 
     var benchmarker: FluentBenchmarker {

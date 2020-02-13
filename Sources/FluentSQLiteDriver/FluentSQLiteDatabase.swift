@@ -32,6 +32,23 @@ extension _FluentSQLiteDatabase: Database {
                 }
         }
     }
+
+    func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.database.withConnection { conn in
+            conn.query("BEGIN TRANSACTION").flatMap { _ in
+                let db = _FluentSQLiteDatabase(database: conn, context: self.context)
+                return closure(db).flatMap { result in
+                    conn.query("COMMIT TRANSACTION").map { _ in
+                        result
+                    }
+                }.flatMapError { error in
+                    conn.query("ROLLBACK TRANSACTION").flatMapThrowing { _ in
+                        throw error
+                    }
+                }
+            }
+        }
+    }
     
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
         let sql = SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)

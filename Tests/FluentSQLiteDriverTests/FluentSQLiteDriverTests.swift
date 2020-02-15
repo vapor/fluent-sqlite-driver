@@ -176,6 +176,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testGroup()
     }
 
+    func testPagination() throws {
+        try self.benchmarker.testPagination()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.database)
     }

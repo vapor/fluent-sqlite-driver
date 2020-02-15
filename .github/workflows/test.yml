@@ -4,7 +4,7 @@ on:
 jobs:
   bionic:
     container: 
-      image: vapor/swift:5.1-bionic
+      image: vapor/swift:5.2-bionic
     runs-on: ubuntu-latest
     steps:
     - run: apt update -y; apt install -y libsqlite3-dev
@@ -12,7 +12,7 @@ jobs:
     - run: swift test --enable-test-discovery --sanitize=thread
   xenial:
     container: 
-      image: vapor/swift:5.1-xenial
+      image: vapor/swift:5.2-xenial
     runs-on: ubuntu-latest
     steps:
     - run: apt update -y; apt install -y libsqlite3-dev

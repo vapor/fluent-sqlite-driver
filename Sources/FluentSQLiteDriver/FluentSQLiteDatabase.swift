@@ -24,7 +24,7 @@ extension _FluentSQLiteDatabase: Database {
                     switch query.action {
                     case .create:
                         return connection.lastAutoincrementID().map {
-                            onRow(LastInsertRow(idKey: query.idKey, lastAutoincrementID: $0))
+                            onRow(LastInsertRow(lastAutoincrementID: $0))
                         }
                     default:
                         return self.eventLoop.makeSucceededFuture(())
@@ -106,15 +106,14 @@ private struct LastInsertRow: DatabaseRow {
         ["id": self.lastAutoincrementID].description
     }
 
-    let idKey: String
     let lastAutoincrementID: Int
 
-    func contains(field: String) -> Bool {
-        field == self.idKey
+    func contains(field: FieldKey) -> Bool {
+        field == .id
     }
 
-    func decode<T>(field: String, as type: T.Type, for database: Database) throws -> T where T : Decodable {
-        guard field == self.idKey else {
+    func decode<T>(field: FieldKey, as type: T.Type, for database: Database) throws -> T where T : Decodable {
+        guard field == .id else {
             fatalError("Cannot decode field from last insert row: \(field).")
         }
         if let autoincrementInitializable = T.self as? AutoincrementIDInitializable.Type {

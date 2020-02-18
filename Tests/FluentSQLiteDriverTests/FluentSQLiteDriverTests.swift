@@ -180,6 +180,10 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testPagination()
     }
 
+    func testSiblingsPerformance() throws {
+        try self.benchmarker.testSiblingsPerformance()
+    }
+
     var benchmarker: FluentBenchmarker {
         return .init(database: self.database)
     }

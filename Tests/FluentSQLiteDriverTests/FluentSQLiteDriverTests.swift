@@ -60,8 +60,8 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testBatchUpdate()
     }
 
-    func testNestedModel() throws {
-        try self.benchmarker.testNestedModel()
+    func testCompoundField() throws {
+        try self.benchmarker.testCompoundField()
     }
 
     func testAggregates() throws {
@@ -181,14 +181,11 @@ final class FluentSQLiteDriverTests: XCTestCase {
     }
 
     var benchmarker: FluentBenchmarker {
-        return .init(database: self.database)
+        return .init(databases: self.dbs)
     }
     
     var database: Database {
-        self.dbs.database(
-            logger: .init(label: "codes.vapor.test"),
-            on: self.eventLoopGroup.next()
-        )!
+        self.benchmarker.database
     }
     
     var threadPool: NIOThreadPool!

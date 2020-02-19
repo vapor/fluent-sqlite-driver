@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.0.0-beta.2"),
+        .package(url: "https://github.com/vapor/fluent-kit.git", .branch("tn-testcase")),
         .package(url: "https://github.com/vapor/sqlite-kit.git", from: "4.0.0-beta.2"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
     ],

@@ -168,10 +168,6 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try self.benchmarker.testRelationMethods()
     }
 
-    func testNonstandardIDKey() throws {
-        try self.benchmarker.testNonstandardIDKey()
-    }
-
     func testGroup() throws {
         try self.benchmarker.testGroup()
     }

@@ -51,6 +51,14 @@ extension _FluentSQLiteDatabase: Database {
     }
     
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
+        switch schema.action {
+        case .update:
+            if schema.createFields.isEmpty {
+                return self.eventLoop.makeSucceededFuture(())
+            }
+        default:
+            break
+        }
         let sql = SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
@@ -64,6 +72,10 @@ extension _FluentSQLiteDatabase: Database {
         return self.database.logging(to: self.logger).query(string, data) {
             fatalError("Unexpected output: \($0)")
         }
+    }
+
+    func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
+        return self.eventLoop.makeSucceededFuture(())
     }
     
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {

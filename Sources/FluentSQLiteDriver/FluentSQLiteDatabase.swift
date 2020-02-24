@@ -8,7 +8,7 @@ struct _FluentSQLiteDatabase {
 extension _FluentSQLiteDatabase: Database {
     func execute(
         query: DatabaseQuery,
-        onRow: @escaping (DatabaseOutput) -> ()
+        onOutput: @escaping (DatabaseOutput) -> ()
     ) -> EventLoopFuture<Void> {
         let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
         let (string, binds) = self.serialize(sql)
@@ -23,7 +23,7 @@ extension _FluentSQLiteDatabase: Database {
         return self.database.withConnection { connection in
             connection.logging(to: self.logger)
                 .query(string, data) { row in
-                    onRow(row)
+                    onOutput(row)
                 }
                 .flatMap {
                     switch query.action {
@@ -33,7 +33,7 @@ extension _FluentSQLiteDatabase: Database {
                                 lastAutoincrementID: $0,
                                 customIDKey: query.customIDKey
                             )
-                            onRow(row)
+                            onOutput(row)
                         }
                     default:
                         return self.eventLoop.makeSucceededFuture(())

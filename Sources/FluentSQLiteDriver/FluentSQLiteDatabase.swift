@@ -6,7 +6,10 @@ struct _FluentSQLiteDatabase {
 }
 
 extension _FluentSQLiteDatabase: Database {
-    func execute(query: DatabaseQuery, onRow: @escaping (DatabaseRow) -> ()) -> EventLoopFuture<Void> {
+    func execute(
+        query: DatabaseQuery,
+        onRow: @escaping (DatabaseOutput) -> ()
+    ) -> EventLoopFuture<Void> {
         let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
@@ -19,12 +22,18 @@ extension _FluentSQLiteDatabase: Database {
         }
         return self.database.withConnection { connection in
             connection.logging(to: self.logger)
-                .query(string, data, onRow)
+                .query(string, data) { row in
+                    onRow(row)
+                }
                 .flatMap {
                     switch query.action {
                     case .create:
                         return connection.lastAutoincrementID().map {
-                            onRow(LastInsertRow(lastAutoincrementID: $0, customIDKey: query.customIDKey))
+                            let row = LastInsertRow(
+                                lastAutoincrementID: $0,
+                                customIDKey: query.customIDKey
+                            )
+                            onRow(row)
                         }
                     default:
                         return self.eventLoop.makeSucceededFuture(())
@@ -113,7 +122,7 @@ extension _FluentSQLiteDatabase: SQLiteDatabase {
     }
 }
 
-private struct LastInsertRow: DatabaseRow {
+private struct LastInsertRow: DatabaseOutput {
     var description: String {
         ["id": self.lastAutoincrementID].description
     }
@@ -121,11 +130,15 @@ private struct LastInsertRow: DatabaseRow {
     let lastAutoincrementID: Int
     let customIDKey: FieldKey?
 
-    func contains(field: FieldKey) -> Bool {
+    func schema(_ schema: String) -> DatabaseOutput {
+        return self
+    }
+
+    func contains(_ field: FieldKey) -> Bool {
         field == .id || field == self.customIDKey
     }
 
-    func decode<T>(field: FieldKey, as type: T.Type, for database: Database) throws -> T where T : Decodable {
+    func decode<T>(_ field: FieldKey, as type: T.Type) throws -> T where T : Decodable {
         guard field == .id || field == self.customIDKey else {
             fatalError("Cannot decode field from last insert row: \(field).")
         }

@@ -6,7 +6,10 @@ struct _FluentSQLiteDatabase {
 }
 
 extension _FluentSQLiteDatabase: Database {
-    func execute(query: DatabaseQuery, onRow: @escaping (DatabaseRow) -> ()) -> EventLoopFuture<Void> {
+    func execute(
+        query: DatabaseQuery,
+        onOutput: @escaping (DatabaseOutput) -> ()
+    ) -> EventLoopFuture<Void> {
         let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
@@ -19,12 +22,18 @@ extension _FluentSQLiteDatabase: Database {
         }
         return self.database.withConnection { connection in
             connection.logging(to: self.logger)
-                .query(string, data, onRow)
+                .query(string, data) { row in
+                    onOutput(row)
+                }
                 .flatMap {
                     switch query.action {
                     case .create:
                         return connection.lastAutoincrementID().map {
-                            onRow(LastInsertRow(idKey: query.idKey, lastAutoincrementID: $0))
+                            let row = LastInsertRow(
+                                lastAutoincrementID: $0,
+                                customIDKey: query.customIDKey
+                            )
+                            onOutput(row)
                         }
                     default:
                         return self.eventLoop.makeSucceededFuture(())
@@ -51,6 +60,14 @@ extension _FluentSQLiteDatabase: Database {
     }
     
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
+        switch schema.action {
+        case .update:
+            if schema.createFields.isEmpty {
+                return self.eventLoop.makeSucceededFuture(())
+            }
+        default:
+            break
+        }
         let sql = SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)
         let (string, binds) = self.serialize(sql)
         let data: [SQLiteData]
@@ -64,6 +81,10 @@ extension _FluentSQLiteDatabase: Database {
         return self.database.logging(to: self.logger).query(string, data) {
             fatalError("Unexpected output: \($0)")
         }
+    }
+
+    func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
+        return self.eventLoop.makeSucceededFuture(())
     }
     
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
@@ -101,20 +122,24 @@ extension _FluentSQLiteDatabase: SQLiteDatabase {
     }
 }
 
-private struct LastInsertRow: DatabaseRow {
+private struct LastInsertRow: DatabaseOutput {
     var description: String {
         ["id": self.lastAutoincrementID].description
     }
 
-    let idKey: String
     let lastAutoincrementID: Int
+    let customIDKey: FieldKey?
 
-    func contains(field: String) -> Bool {
-        field == self.idKey
+    func schema(_ schema: String) -> DatabaseOutput {
+        return self
     }
 
-    func decode<T>(field: String, as type: T.Type, for database: Database) throws -> T where T : Decodable {
-        guard field == self.idKey else {
+    func contains(_ field: FieldKey) -> Bool {
+        field == .id || field == self.customIDKey
+    }
+
+    func decode<T>(_ field: FieldKey, as type: T.Type) throws -> T where T : Decodable {
+        guard field == .id || field == self.customIDKey else {
             fatalError("Cannot decode field from last insert row: \(field).")
         }
         if let autoincrementInitializable = T.self as? AutoincrementIDInitializable.Type {

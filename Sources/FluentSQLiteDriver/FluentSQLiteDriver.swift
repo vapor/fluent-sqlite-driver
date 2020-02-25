@@ -1,20 +1,34 @@
-extension DatabaseDriverFactory {
+extension DatabaseConfigurationFactory {
     public static func sqlite(
         _ configuration: SQLiteConfiguration = .init(storage: .memory),
         maxConnectionsPerEventLoop: Int = 1
     ) -> Self {
-        return .init { databases in
-            let db = SQLiteConnectionSource(
+        return .init {
+            FluentSQLiteConfiguration(
                 configuration: configuration,
-                threadPool: databases.threadPool
-            )
-            let pool = EventLoopGroupConnectionPool(
-                source: db,
                 maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
-                on: databases.eventLoopGroup
+                middleware: []
             )
-            return _FluentSQLiteDriver(pool: pool)
         }
+    }
+}
+
+struct FluentSQLiteConfiguration: DatabaseConfiguration {
+    let configuration: SQLiteConfiguration
+    let maxConnectionsPerEventLoop: Int
+    var middleware: [AnyModelMiddleware]
+
+    func makeDriver(for databases: Databases) -> DatabaseDriver {
+        let db = SQLiteConnectionSource(
+            configuration: configuration,
+            threadPool: databases.threadPool
+        )
+        let pool = EventLoopGroupConnectionPool(
+            source: db,
+            maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
+            on: databases.eventLoopGroup
+        )
+        return _FluentSQLiteDriver(pool: pool)
     }
 }
 

@@ -134,13 +134,13 @@ private struct LastInsertRow: DatabaseOutput {
         return self
     }
 
-    func contains(_ field: FieldKey) -> Bool {
-        field == .id || field == self.customIDKey
+    func contains(_ path: [FieldKey]) -> Bool {
+        path[0] == .id || path[0] == self.customIDKey
     }
 
-    func decode<T>(_ field: FieldKey, as type: T.Type) throws -> T where T : Decodable {
-        guard field == .id || field == self.customIDKey else {
-            fatalError("Cannot decode field from last insert row: \(field).")
+    func decode<T>(_ path: [FieldKey], as type: T.Type) throws -> T where T : Decodable {
+        guard path[0] == .id || path[0] == self.customIDKey else {
+            fatalError("Cannot decode field from last insert row: \(path).")
         }
         if let autoincrementInitializable = T.self as? AutoincrementIDInitializable.Type {
             return autoincrementInitializable.init(autoincrementID: self.lastAutoincrementID) as! T

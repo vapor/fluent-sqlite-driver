@@ -1,29 +1,29 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.2
 import PackageDescription
 
 let package = Package(
     name: "fluent-sqlite-driver",
     platforms: [
-       .macOS(.v10_14)
+       .macOS(.v10_15)
     ],
     products: [
         .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.0.0-beta.5"),
-        .package(url: "https://github.com/vapor/sqlite-kit.git", from: "4.0.0-beta.2"),
+        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.0.0-rc.1"),
+        .package(url: "https://github.com/vapor/sqlite-kit.git", from: "4.0.0-rc.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
     ],
     targets: [
         .target(name: "FluentSQLiteDriver", dependencies: [
-            "FluentKit",
-            "FluentSQL",
-            "Logging",
-            "SQLiteKit",
+            .product(name: "FluentKit", package: "fluent-kit"),
+            .product(name: "FluentSQL", package: "fluent-kit"),
+            .product(name: "Logging", package: "swift-log"),
+            .product(name: "SQLiteKit", package: "sqlite-kit"),
         ]),
         .testTarget(name: "FluentSQLiteDriverTests", dependencies: [
-            "FluentBenchmark",
-            "FluentSQLiteDriver"
+            .product(name: "FluentBenchmark", package: "fluent-kit"),
+            .target(name: "FluentSQLiteDriver"),
         ]),
     ]
 )

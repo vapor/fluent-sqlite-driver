@@ -2,7 +2,7 @@ name: test
 on:
 - pull_request
 jobs:
-  bionic:
+  fluent-sqlite-driver_bionic:
     container: 
       image: vapor/swift:5.2-bionic
     runs-on: ubuntu-latest
@@ -10,7 +10,7 @@ jobs:
     - run: apt update -y; apt install -y libsqlite3-dev
     - uses: actions/checkout@v1
     - run: swift test --enable-test-discovery --sanitize=thread
-  xenial:
+  fluent-sqlite-driver_xenial:
     container: 
       image: vapor/swift:5.2-xenial
     runs-on: ubuntu-latest

@@ -33,6 +33,37 @@ final class FluentSQLiteDriverTests: XCTestCase {
     func testTransaction() throws { try self.benchmarker.testTransaction() }
     func testUnique() throws { try self.benchmarker.testUnique() }
 
+    func testDatabaseError() throws {
+        let sql = (self.database as! SQLDatabase)
+        do {
+            try sql.raw("asdf").run().wait()
+        } catch let error as DatabaseError where error.isSyntaxError {
+            // pass
+        } catch {
+            XCTFail("\(error)")
+        }
+        do {
+            try sql.raw("CREATE TABLE foo (name TEXT UNIQUE)").run().wait()
+            try sql.raw("INSERT INTO foo (name) VALUES ('bar')").run().wait()
+            try sql.raw("INSERT INTO foo (name) VALUES ('bar')").run().wait()
+        } catch let error as DatabaseError where error.isConstraintFailure {
+            // pass
+        } catch {
+            XCTFail("\(error)")
+        }
+        do {
+            try (sql as! SQLiteDatabase).withConnection { conn in
+                conn.close().flatMap {
+                    conn.sql().raw("INSERT INTO foo (name) VALUES ('bar')").run()
+                }
+            }.wait()
+        } catch let error as DatabaseError where error.isConnectionClosed {
+            // pass
+        } catch {
+            XCTFail("\(error)")
+        }
+    }
+    
     var benchmarker: FluentBenchmarker {
         return .init(databases: self.dbs)
     }

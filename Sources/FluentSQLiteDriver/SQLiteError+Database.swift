@@ -1,13 +1,28 @@
 extension SQLiteError: DatabaseError {
     public var isSyntaxError: Bool {
-        return false
+        switch self.reason {
+        case .error:
+            return true
+        default:
+            return false
+        }
     }
 
     public var isConnectionClosed: Bool {
-        return false
+        switch self.reason {
+        case .close, .misuse:
+            return true
+        default:
+            return false
+        }
     }
 
     public var isConstraintFailure: Bool {
-        return false
+        switch self.reason {
+        case .constraint:
+            return true
+        default:
+            return false
+        }
     }
 }

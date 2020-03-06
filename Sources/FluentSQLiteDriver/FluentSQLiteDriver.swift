@@ -8,7 +8,8 @@ struct _FluentSQLiteDriver: DatabaseDriver {
     func makeDatabase(with context: DatabaseContext) -> Database {
         _FluentSQLiteDatabase(
             database: _ConnectionPoolSQLiteDatabase(pool: self.pool.pool(for: context.eventLoop), logger: context.logger),
-            context: context
+            context: context,
+            inTransaction: false
         )
     }
 

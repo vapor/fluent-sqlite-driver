@@ -3,6 +3,7 @@ import FluentSQL
 struct _FluentSQLiteDatabase {
     let database: SQLiteDatabase
     let context: DatabaseContext
+    let inTransaction: Bool
 }
 
 extension _FluentSQLiteDatabase: Database {
@@ -43,16 +44,24 @@ extension _FluentSQLiteDatabase: Database {
     }
 
     func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        self.database.withConnection { conn in
-            conn.query("BEGIN TRANSACTION").flatMap { _ in
-                let db = _FluentSQLiteDatabase(database: conn, context: self.context)
-                return closure(db).flatMap { result in
-                    conn.query("COMMIT TRANSACTION").map { _ in
-                        result
-                    }
-                }.flatMapError { error in
-                    conn.query("ROLLBACK TRANSACTION").flatMapThrowing { _ in
-                        throw error
+        if self.inTransaction {
+            return closure(self)
+        } else {
+            return self.database.withConnection { conn in
+                conn.query("BEGIN TRANSACTION").flatMap { _ in
+                    let db = _FluentSQLiteDatabase(
+                        database: conn,
+                        context: self.context,
+                        inTransaction: true
+                    )
+                    return closure(db).flatMap { result in
+                        conn.query("COMMIT TRANSACTION").map { _ in
+                            result
+                        }
+                    }.flatMapError { error in
+                        conn.query("ROLLBACK TRANSACTION").flatMapThrowing { _ in
+                            throw error
+                        }
                     }
                 }
             }
@@ -89,7 +98,11 @@ extension _FluentSQLiteDatabase: Database {
     
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.database.withConnection {
-            closure(_FluentSQLiteDatabase(database: $0, context: self.context))
+            closure(_FluentSQLiteDatabase(
+                database: $0,
+                context: self.context,
+                inTransaction: self.inTransaction
+            ))
         }
     }
 }

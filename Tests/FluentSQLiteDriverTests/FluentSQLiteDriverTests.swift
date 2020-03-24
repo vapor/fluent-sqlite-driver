@@ -76,7 +76,9 @@ final class FluentSQLiteDriverTests: XCTestCase {
     var eventLoopGroup: EventLoopGroup!
     var dbs: Databases!
 
-    override func setUp() {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        
         XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
@@ -85,13 +87,15 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.dbs.use(.sqlite(.memory), as: .sqlite)
     }
 
-    override func tearDown() {
+    override func tearDownWithError() throws {
         self.dbs.shutdown()
         self.dbs = nil
-        try! self.threadPool.syncShutdownGracefully()
+        try self.threadPool.syncShutdownGracefully()
         self.threadPool = nil
-        try! self.eventLoopGroup.syncShutdownGracefully()
+        try self.eventLoopGroup.syncShutdownGracefully()
         self.eventLoopGroup = nil
+        
+        try super.tearDownWithError()
     }
 }
 

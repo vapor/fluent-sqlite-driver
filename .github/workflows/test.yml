@@ -2,19 +2,25 @@ name: test
 on:
 - pull_request
 jobs:
+  fluent-sqlite-driver_macos:
+     runs-on: macos-latest
+     steps:
+     - run: sudo xcode-select -s /Applications/Xcode_11.4.app/Contents/Developer
+     - uses: actions/checkout@v2
+     - run: xcrun swift test --enable-test-discovery --sanitize=thread
   fluent-sqlite-driver_bionic:
     container: 
-      image: vapor/swift:5.2-bionic
+      image: vapor/swift:5.2-bionic-ci
     runs-on: ubuntu-latest
     steps:
     - run: apt update -y; apt install -y libsqlite3-dev
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - run: swift test --enable-test-discovery --sanitize=thread
   fluent-sqlite-driver_xenial:
     container: 
-      image: vapor/swift:5.2-xenial
+      image: vapor/swift:5.2-xenial-ci
     runs-on: ubuntu-latest
     steps:
     - run: apt update -y; apt install -y libsqlite3-dev
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - run: swift test --enable-test-discovery --sanitize=thread

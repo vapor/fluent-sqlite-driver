@@ -65,7 +65,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
     }
     
     var benchmarker: FluentBenchmarker {
-        return .init(databases: self.dbs)
+        return .init(databases: self.dbs, (.benchmark1, .benchmark2))
     }
     
     var database: Database {
@@ -85,6 +85,8 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.threadPool.start()
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
         self.dbs.use(.sqlite(.memory), as: .sqlite)
+        self.dbs.use(.sqlite(.memory), as: .benchmark1)
+        self.dbs.use(.sqlite(.memory), as: .benchmark2)
     }
 
     override func tearDownWithError() throws {
@@ -107,3 +109,8 @@ let isLoggingConfigured: Bool = {
     }
     return true
 }()
+
+extension DatabaseID {
+    static let benchmark1 = DatabaseID(string: "benchmark1")
+    static let benchmark2 = DatabaseID(string: "benchmark2")
+}

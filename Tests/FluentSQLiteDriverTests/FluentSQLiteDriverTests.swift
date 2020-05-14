@@ -65,7 +65,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
     }
     
     var benchmarker: FluentBenchmarker {
-        return .init(databases: self.dbs, (.benchmark1, .benchmark2))
+        return .init(databases: self.dbs)
     }
     
     var database: Database {
@@ -76,8 +76,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
     var eventLoopGroup: EventLoopGroup!
     var dbs: Databases!
 
-    let benchmark1Path = FileManager.default.temporaryDirectory.appendingPathComponent("benchmark1.sqlite").absoluteString
-    let benchmark2Path = FileManager.default.temporaryDirectory.appendingPathComponent("benchmark2.sqlite").absoluteString
+    let benchmarkPath = FileManager.default.temporaryDirectory.appendingPathComponent("benchmark.sqlite").absoluteString
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -88,8 +87,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.threadPool.start()
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
         self.dbs.use(.sqlite(.memory), as: .sqlite)
-        self.dbs.use(.sqlite(.file(self.benchmark1Path)), as: .benchmark1)
-        self.dbs.use(.sqlite(.file(self.benchmark2Path)), as: .benchmark2)
+        self.dbs.use(.sqlite(.file(self.benchmarkPath)), as: .benchmark)
     }
 
     override func tearDownWithError() throws {
@@ -114,6 +112,5 @@ let isLoggingConfigured: Bool = {
 }()
 
 extension DatabaseID {
-    static let benchmark1 = DatabaseID(string: "benchmark1")
-    static let benchmark2 = DatabaseID(string: "benchmark2")
+    static let benchmark = DatabaseID(string: "benchmark")
 }

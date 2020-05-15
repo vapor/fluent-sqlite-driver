@@ -23,6 +23,16 @@ jobs:
     steps:
       - name: Install dependencies
         run: ${{ matrix.installcmd }}
+      - name: Update AmazonLinux2's too-old SQLite
+        if: ${{ endsWith(matrix.runner, 'amazonlinux2') }}
+        working-directory: /root
+        # Cribbed from the Fedora RPM, leaves out a lot. System's Tcl is too old to run SQLite's tests.
+        run: |
+          yum install -y file tcl-devel make
+          curl -L 'https://www.sqlite.org/src/tarball/sqlite.tar.gz?r=release' | tar xz && cd sqlite
+          export CFLAGS="-DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_SECURE_DELETE=1"
+          ./configure --prefix=/usr --libdir=/usr/lib64 --enable-fts3 --enable-all --with-tcl=/usr/lib64
+          make all install
       - name: Check out code
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer

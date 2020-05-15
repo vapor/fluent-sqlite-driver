@@ -1,26 +1,39 @@
-name: test
-on:
-- pull_request
+name: Test Matrix
+on: ['pull_request']
 jobs:
-  fluent-sqlite-driver_macos:
-     runs-on: macos-latest
-     steps:
-     - run: sudo xcode-select -s /Applications/Xcode_11.4.app/Contents/Developer
-     - uses: actions/checkout@v2
-     - run: xcrun swift test --enable-test-discovery --sanitize=thread
-  fluent-sqlite-driver_bionic:
-    container: 
-      image: vapor/swift:5.2-bionic-ci
+  PR-tests-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [
+          'swift:5.2-xenial', 'swift:5.2-bionic',
+          'swiftlang/swift:nightly-5.2-xenial', 'swiftlang/swift:nightly-5.2-bionic',
+          'swiftlang/swift:nightly-5.3-xenial', 'swiftlang/swift:nightly-5.3-bionic',
+          'swiftlang/swift:nightly-master-xenial', 'swiftlang/swift:nightly-master-bionic',
+          'swiftlang/swift:nightly-master-focal',
+          'swiftlang/swift:nightly-master-centos8',
+          'swiftlang/swift:nightly-master-amazonlinux2'
+        ]
+        include:
+          - installcmd: 'apt-get -q update && apt-get -q install -y libsqlite3-dev'
+          - { 'runner': 'swiftlang/swift:nightly-master-centos8', 'installcmd': 'dnf install -y zlib-devel sqlite-devel' }
+          - { 'runner': 'swiftlang/swift:nightly-master-amazonlinux2', 'installcmd': 'yum install -y zlib-devel sqlite-devel' }
+    container: ${{ matrix.runner }}
     runs-on: ubuntu-latest
     steps:
-    - run: apt update -y; apt install -y libsqlite3-dev
-    - uses: actions/checkout@v2
-    - run: swift test --enable-test-discovery --sanitize=thread
-  fluent-sqlite-driver_xenial:
-    container: 
-      image: vapor/swift:5.2-xenial-ci
-    runs-on: ubuntu-latest
+      - name: Install dependencies
+        run: ${{ matrix.installcmd }}
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Run tests with Thread Sanitizer
+        run: swift test --enable-test-discovery --sanitize=thread
+  PR-tests-macos:
+    runs-on: macos-latest
     steps:
-    - run: apt update -y; apt install -y libsqlite3-dev
-    - uses: actions/checkout@v2
-    - run: swift test --enable-test-discovery --sanitize=thread
+      - name: Select latest available Xcode
+        uses: maxim-lobanov/setup-xcode@1.0
+        with: { 'xcode-version': 'latest' }
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Run tests with Thread Sanitizer
+        run: swift test --enable-test-discovery --sanitize=thread

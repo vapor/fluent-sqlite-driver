@@ -78,15 +78,18 @@ final class FluentSQLiteDriverTests: XCTestCase {
     var eventLoopGroup: EventLoopGroup!
     var dbs: Databases!
 
+    let benchmarkPath = FileManager.default.temporaryDirectory.appendingPathComponent("benchmark.sqlite").absoluteString
+
     override func setUpWithError() throws {
         try super.setUpWithError()
-        
+
         XCTAssert(isLoggingConfigured)
         self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         self.threadPool = .init(numberOfThreads: 2)
         self.threadPool.start()
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
         self.dbs.use(.sqlite(.memory), as: .sqlite)
+        self.dbs.use(.sqlite(.file(self.benchmarkPath)), as: .benchmark)
     }
 
     override func tearDownWithError() throws {
@@ -96,16 +99,24 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.threadPool = nil
         try self.eventLoopGroup.syncShutdownGracefully()
         self.eventLoopGroup = nil
-        
+
         try super.tearDownWithError()
     }
+}
+
+func env(_ name: String) -> String? {
+    return ProcessInfo.processInfo.environment[name]
 }
 
 let isLoggingConfigured: Bool = {
     LoggingSystem.bootstrap { label in
         var handler = StreamLogHandler.standardOutput(label: label)
-        handler.logLevel = .debug
+        handler.logLevel = env("LOG_LEVEL").flatMap { Logger.Level(rawValue: $0) } ?? .debug
         return handler
     }
     return true
 }()
+
+extension DatabaseID {
+    static let benchmark = DatabaseID(string: "benchmark")
+}

@@ -3,6 +3,7 @@ import FluentSQL
 struct _FluentSQLiteDatabase {
     let database: SQLiteDatabase
     let context: DatabaseContext
+    let inTransaction: Bool
 }
 
 extension _FluentSQLiteDatabase: Database {
@@ -43,9 +44,16 @@ extension _FluentSQLiteDatabase: Database {
     }
 
     func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        self.database.withConnection { conn in
+        guard !self.inTransaction else {
+            return closure(self)
+        }
+        return self.database.withConnection { conn in
             conn.query("BEGIN TRANSACTION").flatMap { _ in
-                let db = _FluentSQLiteDatabase(database: conn, context: self.context)
+                let db = _FluentSQLiteDatabase(
+                    database: conn,
+                    context: self.context,
+                    inTransaction: true
+                )
                 return closure(db).flatMap { result in
                     conn.query("COMMIT TRANSACTION").map { _ in
                         result
@@ -63,6 +71,7 @@ extension _FluentSQLiteDatabase: Database {
         switch schema.action {
         case .update:
             if schema.createFields.isEmpty {
+                self.logger.warning("Ignoring schema update. SQLite only supports adding columns to existing tables")
                 return self.eventLoop.makeSucceededFuture(())
             }
         default:
@@ -89,7 +98,7 @@ extension _FluentSQLiteDatabase: Database {
     
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.database.withConnection {
-            closure(_FluentSQLiteDatabase(database: $0, context: self.context))
+            closure(_FluentSQLiteDatabase(database: $0, context: self.context, inTransaction: self.inTransaction))
         }
     }
 }
@@ -134,18 +143,25 @@ private struct LastInsertRow: DatabaseOutput {
         return self
     }
 
-    func contains(_ path: [FieldKey]) -> Bool {
-        path[0] == .id || path[0] == self.customIDKey
+    func contains(_ key: FieldKey) -> Bool {
+        key == .id || key == self.customIDKey
     }
 
-    func decode<T>(_ path: [FieldKey], as type: T.Type) throws -> T where T : Decodable {
-        guard path[0] == .id || path[0] == self.customIDKey else {
-            fatalError("Cannot decode field from last insert row: \(path).")
+    func decodeNil(_ key: FieldKey) throws -> Bool {
+        guard key == .id || key == self.customIDKey else {
+            fatalError("Cannot decode field from last insert row: \(key).")
+        }
+        return false
+    }
+
+    func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T : Decodable {
+        guard key == .id || key == self.customIDKey else {
+            fatalError("Cannot decode field from last insert row: \(key).")
         }
         if let autoincrementInitializable = T.self as? AutoincrementIDInitializable.Type {
             return autoincrementInitializable.init(autoincrementID: self.lastAutoincrementID) as! T
         } else {
-            fatalError("Unsupported database generated identiifer type: \(T.self)")
+            fatalError("Unsupported database generated identifier type: \(T.self)")
         }
     }
 }

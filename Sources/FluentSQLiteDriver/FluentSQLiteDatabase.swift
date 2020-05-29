@@ -147,10 +147,6 @@ private struct LastInsertRow: DatabaseOutput {
         key == .id || key == self.customIDKey
     }
 
-    func nested(_ key: FieldKey) throws -> DatabaseOutput {
-        fatalError("Last insert row does not support nesting.")
-    }
-
     func decodeNil(_ key: FieldKey) throws -> Bool {
         guard key == .id || key == self.customIDKey else {
             fatalError("Cannot decode field from last insert row: \(key).")

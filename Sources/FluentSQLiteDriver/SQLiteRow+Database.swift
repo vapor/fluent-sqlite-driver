@@ -5,18 +5,6 @@ extension SQLiteRow: DatabaseOutput {
         SchemaOutput(row: self, schema: schema)
     }
 
-    public func nested(_ key: FieldKey) throws -> DatabaseOutput {
-        guard let data = self.column(self.columnName(key)) else {
-            fatalError("Missing nested column: \(key).")
-        }
-        switch data {
-        case .blob:
-            fatalError("Decoding nested JSON not yet supported.")
-        default:
-            fatalError("Unexpected nested column type: \(data).")
-        }
-    }
-
     public func contains(_ path: FieldKey) -> Bool {
         self.column(self.columnName(path)) != nil
     }
@@ -55,10 +43,6 @@ private struct SchemaOutput: DatabaseOutput {
 
     func schema(_ schema: String) -> DatabaseOutput {
         SchemaOutput(row: self.row, schema: schema)
-    }
-
-    func nested(_ key: FieldKey) throws -> DatabaseOutput {
-        try self.row.nested(self.key(key))
     }
 
     func contains(_ key: FieldKey) -> Bool {

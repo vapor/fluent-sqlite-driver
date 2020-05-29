@@ -25,8 +25,6 @@ extension SQLiteRow: DatabaseOutput {
         try self.decodeNil(column: self.columnName(key))
     }
 
-    #warning("TODO: decode raw sql to model test")
-
     public func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T
         where T: Decodable
     {

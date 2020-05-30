@@ -2,6 +2,7 @@ import FluentBenchmark
 import FluentSQLiteDriver
 import XCTest
 import Logging
+import NIO
 
 final class FluentSQLiteDriverTests: XCTestCase {
     func testAll() throws { try self.benchmarker.testAll() }
@@ -84,8 +85,8 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try super.setUpWithError()
 
         XCTAssert(isLoggingConfigured)
-        self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-        self.threadPool = .init(numberOfThreads: 2)
+        self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+        self.threadPool = .init(numberOfThreads: System.coreCount)
         self.threadPool.start()
         self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
         self.dbs.use(.sqlite(.memory), as: .sqlite)

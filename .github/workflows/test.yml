@@ -1,30 +1,50 @@
 name: Test Matrix
-on: ['pull_request']
+
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  PR-tests-linux:
+
+  Linux:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        runner: [
-          'swift:5.2-xenial', 'swift:5.2-bionic',
-          'swiftlang/swift:nightly-5.2-xenial', 'swiftlang/swift:nightly-5.2-bionic',
-          'swiftlang/swift:nightly-5.3-xenial', 'swiftlang/swift:nightly-5.3-bionic',
-          'swiftlang/swift:nightly-master-xenial', 'swiftlang/swift:nightly-master-bionic',
-          'swiftlang/swift:nightly-master-focal',
-          'swiftlang/swift:nightly-master-centos8',
-          'swiftlang/swift:nightly-master-amazonlinux2'
-        ]
+        image:
+          # 5.2 Stable
+          - swift:5.2-xenial
+          - swift:5.2-bionic
+          # 5.2 Unstable
+          - swiftlang/swift:nightly-5.2-xenial
+          - swiftlang/swift:nightly-5.2-bionic
+          # 5.3 Unstable
+          - swiftlang/swift:nightly-5.3-xenial
+          - swiftlang/swift:nightly-5.3-bionic
+          # Master Unsable
+          - swiftlang/swift:nightly-master-xenial
+          - swiftlang/swift:nightly-master-bionic
+          - swiftlang/swift:nightly-master-focal
+          - swiftlang/swift:nightly-master-centos8
+          - swiftlang/swift:nightly-master-amazonlinux2
         include:
-          - installcmd: 'apt-get -q update && apt-get -q install -y libsqlite3-dev'
-          - { 'runner': 'swiftlang/swift:nightly-master-centos8', 'installcmd': 'dnf install -y zlib-devel sqlite-devel' }
-          - { 'runner': 'swiftlang/swift:nightly-master-amazonlinux2', 'installcmd': 'yum install -y zlib-devel sqlite-devel' }
-    container: ${{ matrix.runner }}
-    runs-on: ubuntu-latest
+          - depscmd: 'apt-get -q update && apt-get -q install -y libsqlite3-dev'
+          - image: swiftlang/swift:nightly-master-centos8
+            depscmd: 'dnf install -y sqlite-devel'
+          - image: swiftlang/swift:nightly-master-amazonlinux2
+            depscmd: 'yum install -y sqlite-devel'
+    container: ${{ matrix.image }}
     steps:
       - name: Install dependencies
-        run: ${{ matrix.installcmd }}
-      - name: Update AmazonLinux2's too-old SQLite
-        if: ${{ endsWith(matrix.runner, 'amazonlinux2') }}
+        run: ${{ matrix.depscmd }}
+      - name: Update AmazonLinux2's too-old SQLite and compensate for its Postgres
+        if: ${{ endsWith(matrix.image, 'amazonlinux2') }}
         working-directory: /root
         # Cribbed from the Fedora RPM, leaves out a lot. System's Tcl is too old to run SQLite's tests.
         run: |
@@ -33,17 +53,18 @@ jobs:
           export CFLAGS="-DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_SECURE_DELETE=1"
           ./configure --prefix=/usr --libdir=/usr/lib64 --enable-fts3 --enable-all --with-tcl=/usr/lib64
           make all install
-      - name: Check out code
+      - name: Checkout code
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         run: swift test --enable-test-discovery --sanitize=thread
-  PR-tests-macos:
+
+  macOS:
     runs-on: macos-latest
     steps:
       - name: Select latest available Xcode
         uses: maxim-lobanov/setup-xcode@1.0
         with: { 'xcode-version': 'latest' }
-      - name: Check out code
+      - name: Checkout code
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         run: swift test --enable-test-discovery --sanitize=thread

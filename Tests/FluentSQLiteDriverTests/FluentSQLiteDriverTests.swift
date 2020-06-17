@@ -16,6 +16,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
     func testEagerLoad() throws { try self.benchmarker.testEagerLoad() }
     func testEnum() throws { try self.benchmarker.testEnum() }
     func testFilter() throws { try self.benchmarker.testFilter() }
+    func testGroupBy() throws { try self.benchmarker.testGroupBy() }
     func testGroup() throws { try self.benchmarker.testGroup() }
     func testID() throws { try self.benchmarker.testID() }
     func testJoin() throws { try self.benchmarker.testJoin() }

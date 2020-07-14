@@ -8,4 +8,4 @@ database.db
 Package.resolved
 DerivedData
 .swiftpm
-
+Tests/LinuxMain.swift

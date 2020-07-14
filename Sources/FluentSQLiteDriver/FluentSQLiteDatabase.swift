@@ -68,10 +68,34 @@ extension _FluentSQLiteDatabase: Database {
     }
     
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
+        var schema = schema
         switch schema.action {
         case .update:
+            // Remove enum updates as they are unnecessary.
+            schema.updateFields = schema.updateFields.filter({
+                switch $0 {
+                case .custom:
+                    return true
+                case .dataType(_, let dataType):
+                    switch dataType {
+                    case .enum:
+                        return false
+                    default:
+                        return true
+                    }
+                }
+            })
+            guard 
+                schema.createConstraints.isEmpty,
+                schema.updateFields.isEmpty, 
+                schema.deleteFields.isEmpty,
+                schema.deleteConstraints.isEmpty
+            else {
+                return self.eventLoop.makeFailedFuture(FluentSQLiteError.unsupportedAlter)
+            }
+
+            // If only enum updates, then skip.
             if schema.createFields.isEmpty {
-                self.logger.warning("Ignoring schema update. SQLite only supports adding columns to existing tables")
                 return self.eventLoop.makeSucceededFuture(())
             }
         default:
@@ -99,6 +123,17 @@ extension _FluentSQLiteDatabase: Database {
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.database.withConnection {
             closure(_FluentSQLiteDatabase(database: $0, context: self.context, inTransaction: self.inTransaction))
+        }
+    }
+}
+
+private enum FluentSQLiteError: Error, CustomStringConvertible {
+    case unsupportedAlter
+
+    var description: String {
+        switch self {
+        case .unsupportedAlter:
+            return "SQLite only supports adding columns in ALTER TABLE statements."
         }
     }
 }

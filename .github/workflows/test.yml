@@ -1,18 +1,14 @@
-name: Test Matrix
-
+name: test
 on:
   pull_request:
   push:
     branches:
     - master
-
 defaults:
   run:
     shell: bash
-
 jobs:
-
-  Linux:
+  linux:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -34,11 +30,11 @@ jobs:
           - swiftlang/swift:nightly-master-centos8
           - swiftlang/swift:nightly-master-amazonlinux2
         include:
-          - depscmd: 'apt-get -q update && apt-get -q install -y libsqlite3-dev'
+          - depscmd: apt-get -q update && apt-get -q install -y libsqlite3-dev
           - image: swiftlang/swift:nightly-master-centos8
-            depscmd: 'dnf install -y sqlite-devel'
+            depscmd: dnf install -y sqlite-devel
           - image: swiftlang/swift:nightly-master-amazonlinux2
-            depscmd: 'yum install -y sqlite-devel'
+            depscmd: yum install -y sqlite-devel
     container: ${{ matrix.image }}
     steps:
       - name: Install dependencies
@@ -57,14 +53,15 @@ jobs:
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         run: swift test --enable-test-discovery --sanitize=thread
-
   macOS:
     runs-on: macos-latest
     steps:
       - name: Select latest available Xcode
         uses: maxim-lobanov/setup-xcode@1.0
-        with: { 'xcode-version': 'latest' }
+        with:
+          xcode-version: latest
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         run: swift test --enable-test-discovery --sanitize=thread
+

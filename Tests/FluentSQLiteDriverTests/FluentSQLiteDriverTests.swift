@@ -66,6 +66,47 @@ final class FluentSQLiteDriverTests: XCTestCase {
             XCTFail("\(error)")
         }
     }
+
+    // https://github.com/vapor/fluent-sqlite-driver/issues/62
+    func testUnsupportedUpdateMigration() throws {
+        struct UserMigration_v1_0_0: Migration {
+            func prepare(on database: Database) -> EventLoopFuture<Void> {
+                database.schema("users")
+                    .id()
+                    .field("email", .string, .required)
+                    .field("password", .string, .required)
+                    .unique(on: "email")
+                    .create()
+            }
+
+            func revert(on database: Database) -> EventLoopFuture<Void> {
+                database.schema("users").delete()
+            }
+        }
+        struct UserMigration_v1_2_0: Migration {
+            func prepare(on database: Database) -> EventLoopFuture<Void> {
+                database.schema("users")
+                    .field("apple_id", .string)
+                    .unique(on: "apple_id")
+                    .update()
+            }
+
+            func revert(on database: Database) -> EventLoopFuture<Void> {
+                database.schema("users")
+                    .deleteField("apple_id")
+                    .update()
+            }
+        }
+        try UserMigration_v1_0_0().prepare(on: self.database).wait()
+        do {
+            try UserMigration_v1_2_0().prepare(on: self.database).wait()
+            try UserMigration_v1_2_0().revert(on: self.database).wait()
+        } catch {
+            print(error)
+            XCTAssertTrue("\(error)".contains("adding columns"))
+        }
+        try UserMigration_v1_0_0().revert(on: self.database).wait()
+    }
     
     var benchmarker: FluentBenchmarker {
         return .init(databases: self.dbs)

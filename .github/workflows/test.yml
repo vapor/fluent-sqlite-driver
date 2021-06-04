@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-    - master
+      - main
 defaults:
   run:
     shell: bash
@@ -57,11 +57,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Select latest available Xcode
-        uses: maxim-lobanov/setup-xcode@1.0
+        uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run tests with Thread Sanitizer
         run: swift test --enable-test-discovery --sanitize=thread
-

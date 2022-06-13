@@ -28,7 +28,7 @@ extension _FluentSQLiteDatabase: Database {
                 }
                 .flatMap {
                     switch query.action {
-                    case .create:
+                    case .create where query.customIDKey != .string(""):
                         return connection.lastAutoincrementID().map {
                             let row = LastInsertRow(
                                 lastAutoincrementID: $0,

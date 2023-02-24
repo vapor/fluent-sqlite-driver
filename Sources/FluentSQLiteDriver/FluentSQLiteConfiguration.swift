@@ -1,4 +1,6 @@
 import NIO
+import FluentKit
+import SQLiteKit
 
 extension DatabaseConfigurationFactory {
     public static func sqlite(

@@ -1,4 +1,5 @@
 import FluentSQL
+import SQLiteKit
 
 struct _FluentSQLiteDatabase {
     let database: SQLiteDatabase

@@ -1,4 +1,6 @@
 import Foundation
+import SQLiteNIO
+import FluentKit
 
 extension SQLiteRow: DatabaseOutput {
     public func schema(_ schema: String) -> DatabaseOutput {

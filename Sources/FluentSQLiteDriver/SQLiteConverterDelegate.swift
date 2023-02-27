@@ -1,4 +1,6 @@
 import FluentSQL
+import SQLKit
+import FluentKit
 
 struct SQLiteConverterDelegate: SQLConverterDelegate {
     func customDataType(_ dataType: DatabaseSchema.DataType) -> SQLExpression? {

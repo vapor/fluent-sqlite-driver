@@ -3,6 +3,10 @@ import FluentSQLiteDriver
 import XCTest
 import Logging
 import NIO
+import FluentSQL
+import SQLiteNIO
+import FluentKit
+import SQLKit
 
 final class FluentSQLiteDriverTests: XCTestCase {
     //func testAll() throws { try self.benchmarker.testAll() }

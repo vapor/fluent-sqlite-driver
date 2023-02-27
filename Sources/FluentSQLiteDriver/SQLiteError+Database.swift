@@ -1,3 +1,6 @@
+import SQLiteNIO
+import FluentKit
+
 extension SQLiteError: DatabaseError {
     public var isSyntaxError: Bool {
         switch self.reason {

@@ -1,6 +1,7 @@
 import NIO
 import FluentKit
 import SQLiteKit
+import AsyncKit
 
 extension DatabaseConfigurationFactory {
     public static func sqlite(

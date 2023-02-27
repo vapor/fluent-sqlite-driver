@@ -1,5 +1,9 @@
 import FluentSQL
 import SQLiteKit
+import NIOCore
+import SQLiteNIO
+import SQLKit
+import FluentKit
 
 struct _FluentSQLiteDatabase {
     let database: SQLiteDatabase

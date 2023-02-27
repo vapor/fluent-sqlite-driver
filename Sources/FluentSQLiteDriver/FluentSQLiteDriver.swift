@@ -1,3 +1,10 @@
+import NIOCore
+import FluentKit
+import AsyncKit
+import SQLiteNIO
+import SQLiteKit
+import Logging
+
 struct _FluentSQLiteDriver: DatabaseDriver {
     let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
 

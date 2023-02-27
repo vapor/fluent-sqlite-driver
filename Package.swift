@@ -5,7 +5,8 @@ let package = Package(
     name: "fluent-sqlite-driver",
     platforms: [
         .macOS(.v10_15),
-        .iOS(.v13)
+        .iOS(.v13),
+        .watchOS(.v6)
     ],
     products: [
         .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),

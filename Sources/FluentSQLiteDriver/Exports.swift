@@ -1,12 +1,12 @@
-#if !BUILDING_DOCC
+#if swift(>=5.8)
 
-@_exported import FluentKit
-@_exported import SQLiteKit
+@_documentation(visibility: internal) @_exported import FluentKit
+@_documentation(visibility: internal) @_exported import SQLiteKit
 
 #else 
 
-import FluentKit
-import SQLiteKit
+@_exported import FluentKit
+@_exported import SQLiteKit
 
 #endif
 

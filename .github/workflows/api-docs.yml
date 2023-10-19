@@ -11,4 +11,4 @@ jobs:
      with:
        package_name: fluent-sqlite-driver
        modules: FluentSQLiteDriver
-       pathsToInvalidate: /fluentsqlitedriver
+       pathsToInvalidate: /fluentsqlitedriver/*

@@ -9,7 +9,7 @@ extension DatabaseConfigurationFactory {
         maxConnectionsPerEventLoop: Int = 1,
         connectionPoolTimeout: NIO.TimeAmount = .seconds(10)
     ) -> Self {
-        return .init {
+        .init {
             FluentSQLiteConfiguration(
                 configuration: configuration,
                 maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,

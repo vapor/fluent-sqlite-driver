@@ -5,13 +5,11 @@ import SQLiteNIO
 import SQLKit
 import FluentKit
 
-struct _FluentSQLiteDatabase {
+struct FluentSQLiteDatabase: Database, SQLDatabase, SQLiteDatabase {
     let database: SQLiteDatabase
     let context: DatabaseContext
     let inTransaction: Bool
-}
 
-extension _FluentSQLiteDatabase: Database {
     func execute(
         query: DatabaseQuery,
         onOutput: @escaping (DatabaseOutput) -> ()
@@ -29,7 +27,7 @@ extension _FluentSQLiteDatabase: Database {
         return self.database.withConnection { connection in
             connection.logging(to: self.logger)
                 .query(string, data) { row in
-                    onOutput(row)
+                    onOutput(row.databaseOutput(decoder: .init()))
                 }
                 .flatMap {
                     switch query.action {
@@ -54,7 +52,7 @@ extension _FluentSQLiteDatabase: Database {
         }
         return self.database.withConnection { conn in
             conn.query("BEGIN TRANSACTION").flatMap { _ in
-                let db = _FluentSQLiteDatabase(
+                let db = FluentSQLiteDatabase(
                     database: conn,
                     context: self.context,
                     inTransaction: true
@@ -127,23 +125,10 @@ extension _FluentSQLiteDatabase: Database {
     
     func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.database.withConnection {
-            closure(_FluentSQLiteDatabase(database: $0, context: self.context, inTransaction: self.inTransaction))
+            closure(FluentSQLiteDatabase(database: $0, context: self.context, inTransaction: self.inTransaction))
         }
     }
-}
 
-private enum FluentSQLiteError: Error, CustomStringConvertible {
-    case unsupportedAlter
-
-    var description: String {
-        switch self {
-        case .unsupportedAlter:
-            return "SQLite only supports adding columns in ALTER TABLE statements."
-        }
-    }
-}
-
-extension _FluentSQLiteDatabase: SQLDatabase {
     var dialect: SQLDialect {
         SQLiteDialect()
     }
@@ -154,9 +139,7 @@ extension _FluentSQLiteDatabase: SQLDatabase {
     ) -> EventLoopFuture<Void> {
         self.logging(to: self.logger).sql().execute(sql: query, onRow)
     }
-}
 
-extension _FluentSQLiteDatabase: SQLiteDatabase {
     func withConnection<T>(_ closure: @escaping (SQLiteConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.database.withConnection(closure)
     }
@@ -168,6 +151,17 @@ extension _FluentSQLiteDatabase: SQLiteDatabase {
         _ onRow: @escaping (SQLiteRow) -> Void
     ) -> EventLoopFuture<Void> {
         self.database.query(query, binds, logger: logger, onRow)
+    }
+}
+
+private enum FluentSQLiteError: Error, CustomStringConvertible {
+    case unsupportedAlter
+
+    var description: String {
+        switch self {
+        case .unsupportedAlter:
+            return "SQLite only supports adding columns in ALTER TABLE statements."
+        }
     }
 }
 

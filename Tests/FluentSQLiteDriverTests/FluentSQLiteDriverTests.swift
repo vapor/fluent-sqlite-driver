@@ -8,8 +8,22 @@ import SQLiteNIO
 import FluentKit
 import SQLKit
 
+func XCTAssertThrowsErrorAsync<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ message: @autoclosure () -> String = "",
+    file: StaticString = #filePath, line: UInt = #line,
+    _ callback: (any Error) -> Void = { _ in }
+) async {
+    do {
+        _ = try await expression()
+        XCTAssertThrowsError({}(), message(), file: file, line: line, callback)
+    } catch {
+        XCTAssertThrowsError(try { throw error }(), message(), file: file, line: line, callback)
+    }
+}
+
+
 final class FluentSQLiteDriverTests: XCTestCase {
-    //func testAll() throws { try self.benchmarker.testAll() }
     func testAggregate() throws { try self.benchmarker.testAggregate() }
     func testArray() throws { try self.benchmarker.testArray() }
     func testBatch() throws { try self.benchmarker.testBatch() }
@@ -42,34 +56,20 @@ final class FluentSQLiteDriverTests: XCTestCase {
     func testTransaction() throws { try self.benchmarker.testTransaction() }
     func testUnique() throws { try self.benchmarker.testUnique() }
 
-    func testDatabaseError() throws {
-        let sql = (self.database as! SQLDatabase)
-        do {
-            try sql.raw("asdf").run().wait()
-        } catch let error as DatabaseError where error.isSyntaxError {
-            // pass
-        } catch {
-            XCTFail("\(error)")
+    func testDatabaseError() async throws {
+        let sql = (self.database as! any SQLDatabase)
+        await XCTAssertThrowsErrorAsync(try await sql.raw("asdf").run()) {
+            XCTAssertTrue(($0 as? any DatabaseError)?.isSyntaxError ?? false, "\(String(reflecting: $0))")
+            XCTAssertFalse(($0 as? any DatabaseError)?.isConstraintFailure ?? true, "\(String(reflecting: $0))")
+            XCTAssertFalse(($0 as? any DatabaseError)?.isConnectionClosed ?? true, "\(String(reflecting: $0))")
         }
-        do {
-            try sql.raw("CREATE TABLE foo (name TEXT UNIQUE)").run().wait()
-            try sql.raw("INSERT INTO foo (name) VALUES ('bar')").run().wait()
-            try sql.raw("INSERT INTO foo (name) VALUES ('bar')").run().wait()
-        } catch let error as DatabaseError where error.isConstraintFailure {
-            // pass
-        } catch {
-            XCTFail("\(error)")
-        }
-        do {
-            try (sql as! SQLiteDatabase).withConnection { conn in
-                conn.close().flatMap {
-                    conn.sql().raw("INSERT INTO foo (name) VALUES ('bar')").run()
-                }
-            }.wait()
-        } catch let error as DatabaseError where error.isConnectionClosed {
-            // pass
-        } catch {
-            XCTFail("\(error)")
+        try await sql.drop(table: "foo").ifExists().run()
+        try await sql.create(table: "foo").column("name", type: .text, .unique).run()
+        try await sql.insert(into: "foo").columns("name").values("bar").run()
+        await XCTAssertThrowsErrorAsync(try await sql.insert(into: "foo").columns("name").values("bar").run()) {
+            XCTAssertTrue(($0 as? any DatabaseError)?.isConstraintFailure ?? false, "\(String(reflecting: $0))")
+            XCTAssertFalse(($0 as? any DatabaseError)?.isSyntaxError ?? true, "\(String(reflecting: $0))")
+            XCTAssertFalse(($0 as? any DatabaseError)?.isConnectionClosed ?? true, "\(String(reflecting: $0))")
         }
     }
 
@@ -115,15 +115,9 @@ final class FluentSQLiteDriverTests: XCTestCase {
     }
     
     var benchmarker: FluentBenchmarker {
-        return .init(databases: self.dbs)
+        .init(databases: self.dbs)
     }
-    
-    var database: Database {
-        self.benchmarker.database
-    }
-    
-    var threadPool: NIOThreadPool!
-    var eventLoopGroup: EventLoopGroup!
+    var database: (any Database)!
     var dbs: Databases!
 
     let benchmarkPath = FileManager.default.temporaryDirectory.appendingPathComponent("benchmark.sqlite").absoluteString
@@ -132,21 +126,18 @@ final class FluentSQLiteDriverTests: XCTestCase {
         try super.setUpWithError()
 
         XCTAssert(isLoggingConfigured)
-        self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        self.threadPool = .init(numberOfThreads: System.coreCount)
-        self.threadPool.start()
-        self.dbs = Databases(threadPool: self.threadPool, on: self.eventLoopGroup)
+        self.dbs = Databases(threadPool: NIOThreadPool.singleton, on: MultiThreadedEventLoopGroup.singleton)
         self.dbs.use(.sqlite(.memory), as: .sqlite)
         self.dbs.use(.sqlite(.file(self.benchmarkPath)), as: .benchmark)
+
+        let a = self.dbs.database(.sqlite, logger: .init(label: "test.fluent.a"), on: MultiThreadedEventLoopGroup.singleton.any())
+        
+        self.database = a
     }
 
     override func tearDownWithError() throws {
         self.dbs.shutdown()
         self.dbs = nil
-        try self.threadPool.syncShutdownGracefully()
-        self.threadPool = nil
-        try self.eventLoopGroup.syncShutdownGracefully()
-        self.eventLoopGroup = nil
 
         try super.tearDownWithError()
     }
@@ -159,7 +150,7 @@ func env(_ name: String) -> String? {
 let isLoggingConfigured: Bool = {
     LoggingSystem.bootstrap { label in
         var handler = StreamLogHandler.standardOutput(label: label)
-        handler.logLevel = env("LOG_LEVEL").flatMap { Logger.Level(rawValue: $0) } ?? .debug
+        handler.logLevel = env("LOG_LEVEL").flatMap { .init(rawValue: $0) } ?? .debug
         return handler
     }
     return true

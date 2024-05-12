@@ -1,6 +1,6 @@
 import NIOCore
 import FluentKit
-import AsyncKit
+@preconcurrency import AsyncKit
 import SQLiteNIO
 import SQLiteKit
 import Logging
@@ -13,8 +13,8 @@ struct _FluentSQLiteDriver: DatabaseDriver {
     }
 
     func makeDatabase(with context: DatabaseContext) -> Database {
-        _FluentSQLiteDatabase(
-            database: _ConnectionPoolSQLiteDatabase(pool: self.pool.pool(for: context.eventLoop), logger: context.logger),
+        FluentSQLiteDatabase(
+            database: ConnectionPoolSQLiteDatabase(pool: self.pool.pool(for: context.eventLoop), logger: context.logger),
             context: context,
             inTransaction: false
         )
@@ -25,12 +25,12 @@ struct _FluentSQLiteDriver: DatabaseDriver {
     }
 }
 
-struct _ConnectionPoolSQLiteDatabase {
+struct ConnectionPoolSQLiteDatabase {
     let pool: EventLoopConnectionPool<SQLiteConnectionSource>
     let logger: Logger
 }
 
-extension _ConnectionPoolSQLiteDatabase: SQLiteDatabase {
+extension ConnectionPoolSQLiteDatabase: SQLiteDatabase {
     var eventLoop: EventLoop {
         self.pool.eventLoop
     }

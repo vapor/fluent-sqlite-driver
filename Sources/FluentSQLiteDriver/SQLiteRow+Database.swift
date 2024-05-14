@@ -50,3 +50,30 @@ private struct SQLRowDatabaseOutput: DatabaseOutput {
         try self.row.decode(column: self.adjust(key: key), as: T.self)
     }
 }
+
+/// A legacy deprecated conformance of `SQLiteRow` directly to `DatabaseOutput`. This interface exists solely
+/// because its absence would be a public API break.
+///
+/// Do not use these methods.
+@available(*, deprecated, message: "Do not use this conformance.")
+extension SQLiteNIO.SQLiteRow: FluentKit.DatabaseOutput {
+    // See `DatabaseOutput.schema(_:)`.
+    public func schema(_ schema: String) -> any DatabaseOutput {
+        self.databaseOutput().schema(schema)
+    }
+    
+    // See `DatabaseOutput.contains(_:)`.
+    public func contains(_ key: FieldKey) -> Bool {
+        self.databaseOutput().contains(key)
+    }
+    
+    // See `DatabaseOutput.decodeNil(_:)`.
+    public func decodeNil(_ key: FieldKey) throws -> Bool {
+        try self.databaseOutput().decodeNil(key)
+    }
+    
+    // See `DatabaseOutput.decode(_:as:)`.
+    public func decode<T: Decodable>(_ key: FieldKey, as: T.Type) throws -> T {
+        try self.databaseOutput().decode(key, as: T.self)
+    }
+}

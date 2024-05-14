@@ -7,14 +7,19 @@ extension DatabaseConfigurationFactory {
     public static func sqlite(
         _ configuration: SQLiteConfiguration = .init(storage: .memory),
         maxConnectionsPerEventLoop: Int = 1,
-        connectionPoolTimeout: NIO.TimeAmount = .seconds(10)
+        connectionPoolTimeout: NIO.TimeAmount = .seconds(10),
+        dataEncoder: SQLiteDataEncoder = .init(),
+        dataDecoder: SQLiteDataDecoder = .init(),
+        sqlLogLevel: Logger.Level = .debug
     ) -> Self {
         .init {
             FluentSQLiteConfiguration(
                 configuration: configuration,
-                maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
                 middleware: [],
-                connectionPoolTimeout: connectionPoolTimeout
+                connectionPoolTimeout: connectionPoolTimeout,
+                dataEncoder: dataEncoder,
+                dataDecoder: dataDecoder,
+                sqlLogLevel: sqlLogLevel
             )
         }
     }
@@ -22,22 +27,29 @@ extension DatabaseConfigurationFactory {
 
 struct FluentSQLiteConfiguration: DatabaseConfiguration {
     let configuration: SQLiteConfiguration
-    let maxConnectionsPerEventLoop: Int
-    var middleware: [AnyModelMiddleware]
+    var middleware: [any AnyModelMiddleware]
     let connectionPoolTimeout: NIO.TimeAmount
+    let dataEncoder: SQLiteDataEncoder
+    let dataDecoder: SQLiteDataDecoder
+    let sqlLogLevel: Logger.Level?
 
-    func makeDriver(for databases: Databases) -> DatabaseDriver {
+    func makeDriver(for databases: Databases) -> any DatabaseDriver {
         let db = SQLiteConnectionSource(
-            configuration: configuration,
+            configuration: self.configuration,
             threadPool: databases.threadPool
         )
         let pool = EventLoopGroupConnectionPool(
             source: db,
-            maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
-            requestTimeout: connectionPoolTimeout,
+            maxConnectionsPerEventLoop: 1,
+            requestTimeout: self.connectionPoolTimeout,
             on: databases.eventLoopGroup
         )
-        return _FluentSQLiteDriver(pool: pool)
+        return FluentSQLiteDriver(
+            pool: pool,
+            dataEncoder: self.dataEncoder,
+            dataDecoder: self.dataDecoder,
+            sqlLogLevel: self.sqlLogLevel
+        )
     }
 }
 

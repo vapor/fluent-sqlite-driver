@@ -6,211 +6,152 @@ import SQLKit
 import FluentKit
 
 struct FluentSQLiteDatabase: Database, SQLDatabase, SQLiteDatabase {
-    let database: SQLiteDatabase
+    let database: any SQLiteDatabase
     let context: DatabaseContext
+    let dataEncoder: SQLiteDataEncoder
+    let dataDecoder: SQLiteDataDecoder
+    let queryLogLevel: Logger.Level?
     let inTransaction: Bool
-
-    func execute(
-        query: DatabaseQuery,
-        onOutput: @escaping (DatabaseOutput) -> ()
-    ) -> EventLoopFuture<Void> {
-        let sql = SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)
-        let (string, binds) = self.serialize(sql)
-        let data: [SQLiteData]
-        do {
-            data = try binds.map { encodable in
-                try SQLiteDataEncoder().encode(encodable)
-            }
-        } catch {
-            return self.eventLoop.makeFailedFuture(error)
-        }
-        return self.database.withConnection { connection in
-            connection.logging(to: self.logger)
-                .query(string, data) { row in
-                    onOutput(row.databaseOutput(decoder: .init()))
-                }
-                .flatMap {
-                    switch query.action {
-                    case .create where query.customIDKey != .string(""):
-                        return connection.lastAutoincrementID().map {
-                            let row = LastInsertRow(
-                                lastAutoincrementID: $0,
-                                customIDKey: query.customIDKey
-                            )
-                            onOutput(row)
-                        }
-                    default:
-                        return self.eventLoop.makeSucceededFuture(())
-                    }
-                }
-        }
-    }
-
-    func transaction<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        guard !self.inTransaction else {
-            return closure(self)
-        }
-        return self.database.withConnection { conn in
-            conn.query("BEGIN TRANSACTION").flatMap { _ in
-                let db = FluentSQLiteDatabase(
-                    database: conn,
-                    context: self.context,
-                    inTransaction: true
-                )
-                return closure(db).flatMap { result in
-                    conn.query("COMMIT TRANSACTION").map { _ in
-                        result
-                    }
-                }.flatMapError { error in
-                    conn.query("ROLLBACK TRANSACTION").flatMapThrowing { _ in
-                        throw error
-                    }
-                }
-            }
+    
+    private func adjustFluentQuery(_ original: DatabaseQuery, _ converted: any SQLExpression) -> any SQLExpression {
+        /// For `.create` query actions, we want to return the generated IDs, unless the `customIDKey` is the
+        /// empty string, which we use as a very hacky signal for "we don't implement this for composite IDs yet".
+        if case .create = original.action, original.customIDKey != .some(.string("")) {
+            return SQLKit.SQLList([converted, SQLReturning(.init((original.customIDKey ?? .id).description))], separator: SQLRaw(" "))
+        } else {
+            return converted
         }
     }
     
+    // Database
+    
+    func execute(query: DatabaseQuery, onOutput: @escaping @Sendable (any DatabaseOutput) -> ()) -> EventLoopFuture<Void> {
+        /// SQLiteKit will handle applying the configured data decoder to each row when providing `SQLRow`s.
+        return self.execute(
+            sql: self.adjustFluentQuery(query, SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)),
+            { onOutput($0.databaseOutput()) }
+        )
+    }
+    
+    func execute(query: DatabaseQuery, onOutput: @escaping @Sendable (any DatabaseOutput) -> ()) async throws {
+        try await self.execute(
+            sql: self.adjustFluentQuery(query, SQLQueryConverter(delegate: SQLiteConverterDelegate()).convert(query)),
+            { onOutput($0.databaseOutput()) }
+        )
+    }
+
     func execute(schema: DatabaseSchema) -> EventLoopFuture<Void> {
         var schema = schema
-        switch schema.action {
-        case .update:
-            // Remove enum updates as they are unnecessary.
-            schema.updateFields = schema.updateFields.filter({
-                switch $0 {
-                case .custom:
-                    return true
-                case .dataType(_, let dataType):
-                    switch dataType {
-                    case .enum:
-                        return false
-                    default:
-                        return true
-                    }
-                }
-            })
-            guard 
-                schema.createConstraints.isEmpty,
-                schema.updateFields.isEmpty, 
-                schema.deleteFields.isEmpty,
-                schema.deleteConstraints.isEmpty
+        
+        if schema.action == .update {
+            schema.updateFields = schema.updateFields.filter { switch $0 { // Filter out enum updates.
+                case .dataType(_, .enum(_)): return false
+                default: return true
+            } }
+            guard schema.createConstraints.isEmpty, schema.updateFields.isEmpty,
+                  schema.deleteFields.isEmpty, schema.deleteConstraints.isEmpty
             else {
-                return self.eventLoop.makeFailedFuture(FluentSQLiteError.unsupportedAlter)
+                return self.eventLoop.makeFailedFuture(FluentSQLiteUnsupportedAlter())
             }
-
-            // If only enum updates, then skip.
-            if schema.createFields.isEmpty {
+            if schema.createFields.isEmpty { // If there were only enum updates, bail out.
                 return self.eventLoop.makeSucceededFuture(())
             }
-        default:
-            break
         }
-        let sql = SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema)
-        let (string, binds) = self.serialize(sql)
-        let data: [SQLiteData]
-        do {
-            data = try binds.map { encodable in
-                try SQLiteDataEncoder().encode(encodable)
-            }
-        } catch {
-            return self.eventLoop.makeFailedFuture(error)
-        }
-        return self.database.logging(to: self.logger).query(string, data) {
-            fatalError("Unexpected output: \($0)")
-        }
+        
+        return self.execute(
+            sql: SQLSchemaConverter(delegate: SQLiteConverterDelegate()).convert(schema),
+            { self.logger.debug("Unexpected row returned from schema query: \($0)") }
+        )
     }
 
     func execute(enum: DatabaseEnum) -> EventLoopFuture<Void> {
-        return self.eventLoop.makeSucceededFuture(())
+        self.eventLoop.makeSucceededFuture(())
     }
     
-    func withConnection<T>(_ closure: @escaping (Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        self.database.withConnection {
-            closure(FluentSQLiteDatabase(database: $0, context: self.context, inTransaction: self.inTransaction))
+    func withConnection<T>(_ closure: @escaping @Sendable (any Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.eventLoop.makeFutureWithTask { try await self.withConnection { try await closure($0).get() } }
+    }
+    
+    func withConnection<T>(_ closure: @escaping @Sendable (any Database) async throws -> T) async throws -> T {
+        try await self.withConnection {
+            try await closure(FluentSQLiteDatabase(
+                database: $0,
+                context: self.context,
+                dataEncoder: self.dataEncoder,
+                dataDecoder: self.dataDecoder,
+                queryLogLevel: self.queryLogLevel,
+                inTransaction: self.inTransaction
+            ))
         }
     }
-
-    var dialect: SQLDialect {
-        SQLiteDialect()
+    
+    func transaction<T>(_ closure: @escaping @Sendable (any Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        self.inTransaction ?
+            closure(self)  :
+            self.eventLoop.makeFutureWithTask { try await self.transaction { try await closure($0).get() } }
     }
     
-    func execute(
-        sql query: SQLExpression,
-        _ onRow: @escaping (SQLRow) -> ()
-    ) -> EventLoopFuture<Void> {
-        self.logging(to: self.logger).sql().execute(sql: query, onRow)
+    func transaction<T>(_ closure: @escaping @Sendable (any Database) async throws -> T) async throws -> T {
+        guard !self.inTransaction else {
+            return try await closure(self)
+        }
+
+        return try await self.withConnection { conn in
+            _ = try await conn.query("BEGIN TRANSACTION")
+            do {
+                let result = try await closure(FluentSQLiteDatabase(
+                    database: conn,
+                    context: self.context,
+                    dataEncoder: self.dataEncoder,
+                    dataDecoder: self.dataDecoder,
+                    queryLogLevel: self.queryLogLevel,
+                    inTransaction: true
+                ))
+                
+                _ = try await conn.query("COMMIT TRANSACTION")
+                return result
+            } catch {
+                _ = try? await conn.query("ROLLBACK TRANSACTION")
+                throw error
+            }
+        }
+    }
+    
+    // SQLDatabase
+
+    var dialect: any SQLDialect {
+        self.database.sql(encoder: self.dataEncoder, decoder: self.dataDecoder, queryLogLevel: self.queryLogLevel).dialect
+    }
+    
+    var version: (any SQLDatabaseReportedVersion)? {
+        self.database.sql(encoder: self.dataEncoder, decoder: self.dataDecoder, queryLogLevel: self.queryLogLevel).version
+    }
+    
+    func execute(sql query: any SQLExpression, _ onRow: @escaping @Sendable (any SQLRow) -> ()) -> EventLoopFuture<Void> {
+        self.database.sql(encoder: self.dataEncoder, decoder: self.dataDecoder, queryLogLevel: self.queryLogLevel).execute(sql: query, onRow)
+    }
+    
+    func execute(sql query: any SQLExpression, _ onRow: @escaping @Sendable (any SQLRow) -> ()) async throws {
+        try await self.database.sql(encoder: self.dataEncoder, decoder: self.dataDecoder, queryLogLevel: self.queryLogLevel).execute(sql: query, onRow)
+    }
+    
+    func withSession<R>(_ closure: @escaping @Sendable (any SQLDatabase) async throws -> R) async throws -> R {
+        try await self.database.sql(encoder: self.dataEncoder, decoder: self.dataDecoder, queryLogLevel: self.queryLogLevel).withSession(closure)
     }
 
-    func withConnection<T>(_ closure: @escaping (SQLiteConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    // SQLiteDatabase
+    
+    func query(_ query: String, _ binds: [SQLiteData], logger: Logger, _ onRow: @escaping @Sendable (SQLiteRow) -> Void) -> EventLoopFuture<Void> {
+        self.withConnection { $0.query(query, binds, logger: logger, onRow) }
+    }
+
+    func withConnection<T>(_ closure: @escaping @Sendable (SQLiteConnection) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.database.withConnection(closure)
     }
-    
-    func query(
-        _ query: String,
-        _ binds: [SQLiteData],
-        logger: Logger,
-        _ onRow: @escaping (SQLiteRow) -> Void
-    ) -> EventLoopFuture<Void> {
-        self.database.query(query, binds, logger: logger, onRow)
-    }
 }
 
-private enum FluentSQLiteError: Error, CustomStringConvertible {
-    case unsupportedAlter
-
+private struct FluentSQLiteUnsupportedAlter: Error, CustomStringConvertible {
     var description: String {
-        switch self {
-        case .unsupportedAlter:
-            return "SQLite only supports adding columns in ALTER TABLE statements."
-        }
+        "SQLite only supports adding columns in ALTER TABLE statements."
     }
 }
-
-private struct LastInsertRow: DatabaseOutput {
-    var description: String {
-        ["id": self.lastAutoincrementID].description
-    }
-
-    let lastAutoincrementID: Int
-    let customIDKey: FieldKey?
-
-    func schema(_ schema: String) -> DatabaseOutput {
-        return self
-    }
-
-    func contains(_ key: FieldKey) -> Bool {
-        key == .id || key == self.customIDKey
-    }
-
-    func decodeNil(_ key: FieldKey) throws -> Bool {
-        guard key == .id || key == self.customIDKey else {
-            fatalError("Cannot decode field from last insert row: \(key).")
-        }
-        return false
-    }
-
-    func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T where T : Decodable {
-        guard key == .id || key == self.customIDKey else {
-            fatalError("Cannot decode field from last insert row: \(key).")
-        }
-        if let autoincrementInitializable = T.self as? AutoincrementIDInitializable.Type {
-            return autoincrementInitializable.init(autoincrementID: self.lastAutoincrementID) as! T
-        } else {
-            fatalError("Unsupported database generated identifier type: \(T.self)")
-        }
-    }
-}
-
-protocol AutoincrementIDInitializable {
-    init(autoincrementID: Int)
-}
-
-extension AutoincrementIDInitializable where Self: FixedWidthInteger {
-    init(autoincrementID: Int) {
-        self = numericCast(autoincrementID)
-    }
-}
-
-extension Int: AutoincrementIDInitializable { }
-extension UInt: AutoincrementIDInitializable { }
-extension Int64: AutoincrementIDInitializable { }
-extension UInt64: AutoincrementIDInitializable { }

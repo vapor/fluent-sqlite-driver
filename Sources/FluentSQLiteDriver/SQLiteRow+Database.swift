@@ -3,43 +3,50 @@ import SQLiteNIO
 import SQLiteKit
 import FluentKit
 
-extension SQLiteRow {
+extension SQLRow {
     /// Returns a `DatabaseOutput` for this row.
-    /// 
-    /// - Parameter decoder: An `SQLiteDataDecoder` used to translate `SQLiteData` values into output values.
+    ///
     /// - Returns: A `DatabaseOutput` instance.
-    func databaseOutput(decoder: SQLiteDataDecoder) -> any DatabaseOutput {
-        SQLiteDatabaseOutput(row: self.sql(decoder: decoder), schema: nil)
+    func databaseOutput() -> some DatabaseOutput {
+        SQLRowDatabaseOutput(row: self, schema: nil)
     }
 }
 
-/// A `DatabaseOutput` implementation for `SQLiteRow`s.
-private struct SQLiteDatabaseOutput: DatabaseOutput {
+/// A `DatabaseOutput` implementation for generic `SQLRow`s. This should really be in FluentSQL.
+private struct SQLRowDatabaseOutput: DatabaseOutput {
     /// The underlying row.
     let row: any SQLRow
-    
+
     /// The most recently set schema value (see `DatabaseOutput.schema(_:)`).
     let schema: String?
     
-    private func column(for key: FieldKey) -> String {
-        (self.schema.map { FieldKey.prefix(.prefix(.string($0), "_"), key) } ?? key).description
+    // See `CustomStringConvertible.description`.
+    var description: String {
+        String(describing: self.row)
     }
 
-    func schema(_ schema: String) -> DatabaseOutput {
-        SQLiteDatabaseOutput(row: self.row, schema: schema)
-    }
-
-    func contains(_ key: FieldKey) -> Bool {
-        self.row.contains(column: self.column(for: key))
-    }
-
-    func decodeNil(_ key: FieldKey) throws -> Bool {
-        try self.row.decodeNil(column: self.column(for: key))
-    }
-
-    func decode<T: Decodable>(_ key: FieldKey, as type: T.Type) throws -> T {
-        try self.row.decode(column: self.column(for: key), as: T.self)
+    /// Apply the current schema (if any) to the given `FieldKey` and convert to a column name.
+    private func adjust(key: FieldKey) -> String {
+        (self.schema.map { .prefix(.prefix(.string($0), "_"), key) } ?? key).description
     }
     
-    var description: String { "" }
+    // See `DatabaseOutput.schema(_:)`.
+    func schema(_ schema: String) -> any DatabaseOutput {
+        SQLRowDatabaseOutput(row: self.row, schema: schema)
+    }
+    
+    // See `DatabaseOutput.contains(_:)`.
+    func contains(_ key: FieldKey) -> Bool {
+        self.row.contains(column: self.adjust(key: key))
+    }
+    
+    // See `DatabaseOutput.decodeNil(_:)`.
+    func decodeNil(_ key: FieldKey) throws -> Bool {
+        try self.row.decodeNil(column: self.adjust(key: key))
+    }
+    
+    // See `DatabaseOutput.decode(_:as:)`.
+    func decode<T: Decodable>(_ key: FieldKey, as: T.Type) throws -> T {
+        try self.row.decode(column: self.adjust(key: key), as: T.self)
+    }
 }

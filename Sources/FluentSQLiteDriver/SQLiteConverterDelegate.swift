@@ -3,7 +3,7 @@ import SQLKit
 import FluentKit
 
 struct SQLiteConverterDelegate: SQLConverterDelegate {
-    func customDataType(_ dataType: DatabaseSchema.DataType) -> SQLExpression? {
+    func customDataType(_ dataType: DatabaseSchema.DataType) -> (any SQLExpression)? {
         switch dataType {
         case .string:
             return SQLRaw("TEXT")
@@ -13,7 +13,8 @@ struct SQLiteConverterDelegate: SQLConverterDelegate {
             return SQLRaw("INTEGER")
         case .enum:
             return SQLRaw("TEXT")
-        default: return nil
+        default:
+            return nil
         }
     }
 }

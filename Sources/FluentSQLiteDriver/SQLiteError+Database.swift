@@ -4,7 +4,7 @@ import FluentKit
 extension SQLiteError: DatabaseError {
     public var isSyntaxError: Bool {
         switch self.reason {
-        case .error:
+        case .error, .schema:
             return true
         default:
             return false
@@ -13,7 +13,7 @@ extension SQLiteError: DatabaseError {
 
     public var isConnectionClosed: Bool {
         switch self.reason {
-        case .close, .misuse:
+        case .misuse, .cantOpen:
             return true
         default:
             return false
@@ -22,7 +22,10 @@ extension SQLiteError: DatabaseError {
 
     public var isConstraintFailure: Bool {
         switch self.reason {
-        case .constraint:
+        case .constraint, .constraintCheckFailed, .constraintUniqueFailed, .constraintTriggerFailed,
+             .constraintNotNullFailed, .constraintCommitHookFailed, .constraintForeignKeyFailed,
+             .constraintPrimaryKeyFailed, .constraintUserFunctionFailed, .constraintVirtualTableFailed,
+             .constraintUniqueRowIDFailed, .constraintStrictDataTypeFailed, .constraintUpdateTriggerDeletedRow:
             return true
         default:
             return false

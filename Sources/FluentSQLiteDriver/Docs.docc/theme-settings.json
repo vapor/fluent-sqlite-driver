@@ -1,0 +1,21 @@
+{
+  "theme": {
+    "aside": { "border-radius": "16px", "border-style": "double", "border-width": "3px" },
+    "border-radius": "0",
+    "button": { "border-radius": "16px", "border-width": "1px", "border-style": "solid" },
+    "code":   { "border-radius": "16px", "border-width": "1px", "border-style": "solid" },
+    "color": {
+      "fluentsqlitedriver": "hsl(215, 45%, 58%)",
+      "documentation-intro-fill": "radial-gradient(circle at top, var(--color-fluentsqlitedriver) 30%, #000 100%)",
+      "documentation-intro-accent": "var(--color-fluentsqlitedriver)",
+      "logo-base":  { "dark": "#fff", "light": "#000" },
+      "logo-shape": { "dark": "#000", "light": "#fff" },
+      "fill":       { "dark": "#000", "light": "#fff" }
+    },
+    "icons": { "technology": "/fluentsqlitedriver/images/vapor-fluentsqlitedriver-logo.svg" }
+  },
+  "features": {
+    "quickNavigation": { "enable": true },
+    "i18n": { "enable": true }
+  }
+}

@@ -1,67 +1,79 @@
 import Foundation
 import SQLiteNIO
+import SQLiteKit
 import FluentKit
 
-extension SQLiteRow: DatabaseOutput {
-    public func schema(_ schema: String) -> DatabaseOutput {
-        SchemaOutput(row: self, schema: schema)
-    }
-
-    public func contains(_ path: FieldKey) -> Bool {
-        self.column(self.columnName(path)) != nil
-    }
-
-    public func decodeNil(_ key: FieldKey) throws -> Bool {
-        try self.decodeNil(column: self.columnName(key))
-    }
-
-    public func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T
-        where T: Decodable
-    {
-        try self.decode(column: self.columnName(key), as: T.self)
-    }
-
-    func columnName(_ key: FieldKey) -> String {
-        switch key {
-        case .id:
-            return "id"
-        case .aggregate:
-            return key.description
-        case .string(let name):
-            return name
-        case .prefix(let prefix, let key):
-            return self.columnName(prefix) + self.columnName(key)
-        }
+extension SQLRow {
+    /// Returns a `DatabaseOutput` for this row.
+    ///
+    /// - Returns: A `DatabaseOutput` instance.
+    func databaseOutput() -> some DatabaseOutput {
+        SQLRowDatabaseOutput(row: self, schema: nil)
     }
 }
 
-private struct SchemaOutput: DatabaseOutput {
-    let row: SQLiteRow
-    let schema: String
+/// A `DatabaseOutput` implementation for generic `SQLRow`s. This should really be in FluentSQL.
+private struct SQLRowDatabaseOutput: DatabaseOutput {
+    /// The underlying row.
+    let row: any SQLRow
 
+    /// The most recently set schema value (see `DatabaseOutput.schema(_:)`).
+    let schema: String?
+    
+    // See `CustomStringConvertible.description`.
     var description: String {
-        self.row.description
+        String(describing: self.row)
     }
 
-    func schema(_ schema: String) -> DatabaseOutput {
-        SchemaOutput(row: self.row, schema: schema)
+    /// Apply the current schema (if any) to the given `FieldKey` and convert to a column name.
+    private func adjust(key: FieldKey) -> String {
+        (self.schema.map { .prefix(.prefix(.string($0), "_"), key) } ?? key).description
     }
-
+    
+    // See `DatabaseOutput.schema(_:)`.
+    func schema(_ schema: String) -> any DatabaseOutput {
+        SQLRowDatabaseOutput(row: self.row, schema: schema)
+    }
+    
+    // See `DatabaseOutput.contains(_:)`.
     func contains(_ key: FieldKey) -> Bool {
-        self.row.contains(self.key(key))
+        self.row.contains(column: self.adjust(key: key))
     }
-
+    
+    // See `DatabaseOutput.decodeNil(_:)`.
     func decodeNil(_ key: FieldKey) throws -> Bool {
-        try self.row.decodeNil(self.key(key))
+        try self.row.decodeNil(column: self.adjust(key: key))
     }
-
-    func decode<T>(_ key: FieldKey, as type: T.Type) throws -> T
-        where T : Decodable
-    {
-        try self.row.decode(self.key(key), as: T.self)
+    
+    // See `DatabaseOutput.decode(_:as:)`.
+    func decode<T: Decodable>(_ key: FieldKey, as: T.Type) throws -> T {
+        try self.row.decode(column: self.adjust(key: key), as: T.self)
     }
+}
 
-    func key(_ key: FieldKey) -> FieldKey {
-        .prefix(.string(self.schema + "_"), key)
+/// A legacy deprecated conformance of `SQLiteRow` directly to `DatabaseOutput`. This interface exists solely
+/// because its absence would be a public API break.
+///
+/// Do not use these methods.
+@available(*, deprecated, message: "Do not use this conformance.")
+extension SQLiteNIO.SQLiteRow: FluentKit.DatabaseOutput {
+    // See `DatabaseOutput.schema(_:)`.
+    public func schema(_ schema: String) -> any DatabaseOutput {
+        self.databaseOutput().schema(schema)
+    }
+    
+    // See `DatabaseOutput.contains(_:)`.
+    public func contains(_ key: FieldKey) -> Bool {
+        self.databaseOutput().contains(key)
+    }
+    
+    // See `DatabaseOutput.decodeNil(_:)`.
+    public func decodeNil(_ key: FieldKey) throws -> Bool {
+        try self.databaseOutput().decodeNil(key)
+    }
+    
+    // See `DatabaseOutput.decode(_:as:)`.
+    public func decode<T: Decodable>(_ key: FieldKey, as: T.Type) throws -> T {
+        try self.databaseOutput().decode(key, as: T.self)
     }
 }

@@ -114,7 +114,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
 
             func revert(on database: any Database) async throws {
                 try await database.schema("users")
-                    .deleteField("apple_id")
+                    .deleteUnique(on: "apple_id")
                     .update()
             }
         }
@@ -126,6 +126,31 @@ final class FluentSQLiteDriverTests: XCTestCase {
         await XCTAssertThrowsErrorAsync(try await UserMigration_v1_2_0().revert(on: self.database)) {
             XCTAssert(String(describing: $0).contains("adding columns"))
         }
+        await XCTAssertNoThrowAsync(try await UserMigration_v1_0_0().revert(on: self.database))
+    }
+    
+    // https://github.com/vapor/fluent-sqlite-driver/issues/91
+    func testDeleteFieldMigration() async throws {
+        struct UserMigration_v1_0_0: AsyncMigration {
+            func prepare(on database: any Database) async throws {
+                try await database.schema("users").id().field("email", .string, .required).field("password", .string, .required).create()
+            }
+            func revert(on database: any Database) async throws {
+                try await database.schema("users").delete()
+            }
+        }
+        struct UserMigration_v1_1_0: AsyncMigration {
+            func prepare(on database: any Database) async throws {
+                try await database.schema("users").deleteField("password").update()
+            }
+            func revert(on database: any Database) async throws {
+                try await database.schema("users").field("password", .string, .required).update()
+            }
+        }
+        
+        await XCTAssertNoThrowAsync(try await UserMigration_v1_0_0().prepare(on: self.database))
+        await XCTAssertNoThrowAsync(try await UserMigration_v1_1_0().prepare(on: self.database))
+        await XCTAssertNoThrowAsync(try await UserMigration_v1_1_0().revert(on: self.database))
         await XCTAssertNoThrowAsync(try await UserMigration_v1_0_0().revert(on: self.database))
     }
 

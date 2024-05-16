@@ -48,12 +48,10 @@ struct FluentSQLiteDatabase: Database, SQLDatabase, SQLiteDatabase {
                 case .dataType(_, .enum(_)): return false
                 default: return true
             } }
-            guard schema.createConstraints.isEmpty, schema.updateFields.isEmpty,
-                  schema.deleteFields.isEmpty, schema.deleteConstraints.isEmpty
-            else {
+            guard schema.createConstraints.isEmpty, schema.updateFields.isEmpty, schema.deleteConstraints.isEmpty else {
                 return self.eventLoop.makeFailedFuture(FluentSQLiteUnsupportedAlter())
             }
-            if schema.createFields.isEmpty { // If there were only enum updates, bail out.
+            if schema.createFields.isEmpty, schema.deleteFields.isEmpty { // If there were only enum updates, bail out.
                 return self.eventLoop.makeSucceededFuture(())
             }
         }

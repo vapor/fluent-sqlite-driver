@@ -27,7 +27,7 @@ struct FluentSQLiteDriver: DatabaseDriver {
     }
 
     func shutdown() {
-        self.pool.shutdown()
+        try? self.pool.syncShutdownGracefully()
     }
 }
 

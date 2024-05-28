@@ -95,21 +95,23 @@ struct FluentSQLiteDatabase: Database, SQLDatabase, SQLiteDatabase {
         }
 
         return try await self.withConnection { conn in
-            _ = try await conn.query("BEGIN TRANSACTION")
+            let db = FluentSQLiteDatabase(
+                database: conn,
+                context: self.context,
+                dataEncoder: self.dataEncoder,
+                dataDecoder: self.dataDecoder,
+                queryLogLevel: self.queryLogLevel,
+                inTransaction: true
+            )
+            
+            try await db.raw("BEGIN TRANSACTION").run()
             do {
-                let result = try await closure(FluentSQLiteDatabase(
-                    database: conn,
-                    context: self.context,
-                    dataEncoder: self.dataEncoder,
-                    dataDecoder: self.dataDecoder,
-                    queryLogLevel: self.queryLogLevel,
-                    inTransaction: true
-                ))
+                let result = try await closure(db)
                 
-                _ = try await conn.query("COMMIT TRANSACTION")
+                try await db.raw("COMMIT TRANSACTION").run()
                 return result
             } catch {
-                _ = try? await conn.query("ROLLBACK TRANSACTION")
+                try? await db.raw("ROLLBACK TRANSACTION").run()
                 throw error
             }
         }

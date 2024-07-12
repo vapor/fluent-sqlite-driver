@@ -58,7 +58,7 @@ extension DatabaseConfigurationFactory {
     ///
     /// - Parameters:
     ///   - configuration: The underlying `SQLiteConfiguration`.
-    ///   - maxConnnectionsPerEventLoop: Ignored. The value is always treated as 1.
+    ///   - maxConnectionsPerEventLoop: Ignored. The value is always treated as 1.
     ///   - dataEncoder: An `SQLiteDataEncoder` used to translate bound query parameters into `SQLiteData` values.
     ///   - dataDecoder: An `SQLiteDataDecoder` used to translate `SQLiteData` values into output values.
     ///   - queryLogLevel: The level at which SQL queries issued through the Fluent or SQLKit interfaces will be logged.

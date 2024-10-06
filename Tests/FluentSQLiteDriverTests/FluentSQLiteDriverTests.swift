@@ -218,11 +218,11 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.dbs.use(.sqlite(.file(self.benchmarkPath)), as: .init(string: "benchmark"))
         self.database = self.dbs.database(.sqlite, logger: .init(label: "test.fluent.sqlite"), on: MultiThreadedEventLoopGroup.singleton.any())
     }
-
-    override func tearDownWithError() throws {
-        self.dbs.shutdown()
+    
+    override func tearDown() async throws {
+        await self.dbs.shutdownAsync()
         self.dbs = nil
-        try super.tearDownWithError()
+        try await super.tearDown()
     }
 }
 

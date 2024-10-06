@@ -1,7 +1,8 @@
 import SQLiteNIO
 import FluentKit
 
-extension SQLiteError: DatabaseError {
+// Required for Database Error
+extension SQLiteError {
     public var isSyntaxError: Bool {
         switch self.reason {
         case .error, .schema:
@@ -32,3 +33,9 @@ extension SQLiteError: DatabaseError {
         }
     }
 }
+
+#if compiler(<6)
+extension SQLiteError: DatabaseError { }
+#else
+extension SQLiteError: @retroactive DatabaseError { }
+#endif

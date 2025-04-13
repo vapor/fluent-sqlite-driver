@@ -216,8 +216,8 @@ final class FluentSQLiteDriverTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         self.dbs = Databases(threadPool: NIOThreadPool.singleton, on: MultiThreadedEventLoopGroup.singleton)
-        self.dbs.use(.sqlite(.memory), as: .sqlite)
-        self.dbs.use(.sqlite(.file(self.benchmarkPath)), as: .init(string: "benchmark"))
+        self.dbs.use(.sqlite(.memory, connectionPoolTimeout: .seconds(30)), as: .sqlite)
+        self.dbs.use(.sqlite(.file(self.benchmarkPath), connectionPoolTimeout: .seconds(30)), as: .init(string: "benchmark"))
         self.database = self.dbs.database(.sqlite, logger: .init(label: "test.fluent.sqlite"), on: MultiThreadedEventLoopGroup.singleton.any())
     }
 

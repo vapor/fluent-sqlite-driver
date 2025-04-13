@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 import PackageDescription
 
 let package = Package(
@@ -13,9 +13,9 @@ let package = Package(
         .library(name: "FluentSQLiteDriver", targets: ["FluentSQLiteDriver"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.49.0"),
-        .package(url: "https://github.com/vapor/sqlite-kit.git", from: "4.5.1"),
-        .package(url: "https://github.com/apple/swift-log.git", from: "1.5.4"),
+        .package(url: "https://github.com/vapor/fluent-kit.git", from: "1.51.0"),
+        .package(url: "https://github.com/vapor/sqlite-kit.git", from: "4.5.2"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.6.3"),
     ],
     targets: [
         .target(

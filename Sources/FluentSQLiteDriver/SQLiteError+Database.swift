@@ -1,41 +1,41 @@
-import SQLiteNIO
 import FluentKit
+import SQLiteNIO
 
 // Required for Database Error
 extension SQLiteError {
     public var isSyntaxError: Bool {
         switch self.reason {
         case .error, .schema:
-            return true
+            true
         default:
-            return false
+            false
         }
     }
 
     public var isConnectionClosed: Bool {
         switch self.reason {
         case .misuse, .cantOpen:
-            return true
+            true
         default:
-            return false
+            false
         }
     }
 
     public var isConstraintFailure: Bool {
         switch self.reason {
         case .constraint, .constraintCheckFailed, .constraintUniqueFailed, .constraintTriggerFailed,
-             .constraintNotNullFailed, .constraintCommitHookFailed, .constraintForeignKeyFailed,
-             .constraintPrimaryKeyFailed, .constraintUserFunctionFailed, .constraintVirtualTableFailed,
-             .constraintUniqueRowIDFailed, .constraintStrictDataTypeFailed, .constraintUpdateTriggerDeletedRow:
-            return true
+            .constraintNotNullFailed, .constraintCommitHookFailed, .constraintForeignKeyFailed,
+            .constraintPrimaryKeyFailed, .constraintUserFunctionFailed, .constraintVirtualTableFailed,
+            .constraintUniqueRowIDFailed, .constraintStrictDataTypeFailed, .constraintUpdateTriggerDeletedRow:
+            true
         default:
-            return false
+            false
         }
     }
 }
 
 #if compiler(<6)
-extension SQLiteError: DatabaseError { }
+extension SQLiteError: DatabaseError {}
 #else
-extension SQLiteError: @retroactive DatabaseError { }
+extension SQLiteError: @retroactive DatabaseError {}
 #endif

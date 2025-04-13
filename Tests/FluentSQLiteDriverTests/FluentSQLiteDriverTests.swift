@@ -1,12 +1,12 @@
 import FluentBenchmark
+import FluentKit
+import FluentSQL
 import FluentSQLiteDriver
-import XCTest
 import Logging
 import NIO
-import FluentSQL
-import SQLiteNIO
-import FluentKit
 import SQLKit
+import SQLiteNIO
+import XCTest
 
 func XCTAssertThrowsErrorAsync<T>(
     _ expression: @autoclosure () async throws -> T,
@@ -70,13 +70,13 @@ final class FluentSQLiteDriverTests: XCTestCase {
 
     func testDatabaseError() async throws {
         let sql = (self.database as! any SQLDatabase)
-        
+
         await XCTAssertThrowsErrorAsync(try await sql.raw("asdf").run()) {
             XCTAssertTrue(($0 as? any DatabaseError)?.isSyntaxError ?? false, "\(String(reflecting: $0))")
             XCTAssertFalse(($0 as? any DatabaseError)?.isConstraintFailure ?? true, "\(String(reflecting: $0))")
             XCTAssertFalse(($0 as? any DatabaseError)?.isConnectionClosed ?? true, "\(String(reflecting: $0))")
         }
-        
+
         try await sql.drop(table: "foo").ifExists().run()
         try await sql.create(table: "foo").column("name", type: .text, .unique).run()
         try await sql.insert(into: "foo").columns("name").values("bar").run()
@@ -103,7 +103,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
                 try await database.schema("users").delete()
             }
         }
-        
+
         struct UserMigration_v1_2_0: AsyncMigration {
             func prepare(on database: any Database) async throws {
                 try await database.schema("users")
@@ -118,7 +118,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
                     .update()
             }
         }
-        
+
         try await UserMigration_v1_0_0().prepare(on: self.database)
         await XCTAssertThrowsErrorAsync(try await UserMigration_v1_2_0().prepare(on: self.database)) {
             XCTAssert(String(describing: $0).contains("adding columns"))
@@ -128,7 +128,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
         }
         await XCTAssertNoThrowAsync(try await UserMigration_v1_0_0().revert(on: self.database))
     }
-    
+
     // https://github.com/vapor/fluent-sqlite-driver/issues/91
     func testDeleteFieldMigration() async throws {
         struct UserMigration_v1_0_0: AsyncMigration {
@@ -147,7 +147,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
                 try await database.schema("users").field("password", .string, .required).update()
             }
         }
-        
+
         await XCTAssertNoThrowAsync(try await UserMigration_v1_0_0().prepare(on: self.database))
         await XCTAssertNoThrowAsync(try await UserMigration_v1_1_0().prepare(on: self.database))
         await XCTAssertNoThrowAsync(try await UserMigration_v1_1_0().revert(on: self.database))
@@ -177,9 +177,11 @@ final class FluentSQLiteDriverTests: XCTestCase {
                 try await database.schema(Event.schema).delete()
             }
         }
-        
-        let jsonEncoder = JSONEncoder(); jsonEncoder.dateEncodingStrategy = .iso8601
-        let jsonDecoder = JSONDecoder(); jsonDecoder.dateDecodingStrategy = .iso8601
+
+        let jsonEncoder = JSONEncoder()
+        jsonEncoder.dateEncodingStrategy = .iso8601
+        let jsonDecoder = JSONDecoder()
+        jsonDecoder.dateDecodingStrategy = .iso8601
         let iso8601 = DatabaseID(string: "iso8601")
 
         self.dbs.use(.sqlite(.memory, dataEncoder: .init(json: jsonEncoder), dataDecoder: .init(json: jsonDecoder)), as: iso8601)
@@ -218,7 +220,7 @@ final class FluentSQLiteDriverTests: XCTestCase {
         self.dbs.use(.sqlite(.file(self.benchmarkPath)), as: .init(string: "benchmark"))
         self.database = self.dbs.database(.sqlite, logger: .init(label: "test.fluent.sqlite"), on: MultiThreadedEventLoopGroup.singleton.any())
     }
-    
+
     override func tearDown() async throws {
         await self.dbs.shutdownAsync()
         self.dbs = nil

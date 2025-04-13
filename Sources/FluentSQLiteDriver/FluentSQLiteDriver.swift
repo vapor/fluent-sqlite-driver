@@ -1,9 +1,9 @@
-import NIOCore
-import FluentKit
 @preconcurrency import AsyncKit
-import SQLiteNIO
-import SQLiteKit
+import FluentKit
 import Logging
+import NIOCore
+import SQLiteKit
+import SQLiteNIO
 
 struct FluentSQLiteDriver: DatabaseDriver {
     let pool: EventLoopGroupConnectionPool<SQLiteConnectionSource>
@@ -29,7 +29,7 @@ struct FluentSQLiteDriver: DatabaseDriver {
     func shutdown() {
         try? self.pool.syncShutdownGracefully()
     }
-    
+
     func shutdownAsync() async {
         try? await self.pool.shutdownAsync()
     }

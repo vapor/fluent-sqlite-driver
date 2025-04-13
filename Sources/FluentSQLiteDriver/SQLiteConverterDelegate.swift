@@ -1,20 +1,20 @@
+import FluentKit
 import FluentSQL
 import SQLKit
-import FluentKit
 
 struct SQLiteConverterDelegate: SQLConverterDelegate {
     func customDataType(_ dataType: DatabaseSchema.DataType) -> (any SQLExpression)? {
         switch dataType {
         case .string:
-            return SQLRaw("TEXT")
+            SQLRaw("TEXT")
         case .datetime:
-            return SQLRaw("REAL")
+            SQLRaw("REAL")
         case .int64:
-            return SQLRaw("INTEGER")
+            SQLRaw("INTEGER")
         case .enum:
-            return SQLRaw("TEXT")
+            SQLRaw("TEXT")
         default:
-            return nil
+            nil
         }
     }
 }

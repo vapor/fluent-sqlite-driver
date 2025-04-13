@@ -1,8 +1,8 @@
-import NIO
-import FluentKit
-import SQLiteKit
 import AsyncKit
+import FluentKit
 import Logging
+import NIO
+import SQLiteKit
 
 // Hint: Yes, I know what default arguments are. This ridiculous spelling out of each alternative avoids public API
 // breakage from adding the defaults. And yes, `maxConnectionsPerEventLoop` is not forwarded on purpose, it's not
@@ -11,18 +11,22 @@ import Logging
 
 extension DatabaseConfigurationFactory {
     /// Shorthand for ``sqlite(_:maxConnectionsPerEventLoop:connectionPoolTimeout:dataEncoder:dataDecoder:sqlLogLevel:)``.
-    public static func sqlite(_ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10)) -> Self {
+    public static func sqlite(
+        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10)
+    ) -> Self {
         self.sqlite(config, connectionPoolTimeout: connectionPoolTimeout, dataEncoder: .init(), dataDecoder: .init(), sqlLogLevel: .debug)
     }
     /// Shorthand for ``sqlite(_:maxConnectionsPerEventLoop:connectionPoolTimeout:dataEncoder:dataDecoder:sqlLogLevel:)``.
     public static func sqlite(
-        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10), dataEncoder: SQLiteDataEncoder
+        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10),
+        dataEncoder: SQLiteDataEncoder
     ) -> Self {
         self.sqlite(config, connectionPoolTimeout: connectionPoolTimeout, dataEncoder: dataEncoder, dataDecoder: .init(), sqlLogLevel: .debug)
     }
     /// Shorthand for ``sqlite(_:maxConnectionsPerEventLoop:connectionPoolTimeout:dataEncoder:dataDecoder:sqlLogLevel:)``.
     public static func sqlite(
-        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10), dataDecoder: SQLiteDataDecoder
+        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10),
+        dataDecoder: SQLiteDataDecoder
     ) -> Self {
         self.sqlite(config, connectionPoolTimeout: connectionPoolTimeout, dataEncoder: .init(), dataDecoder: dataDecoder, sqlLogLevel: .debug)
     }
@@ -35,7 +39,8 @@ extension DatabaseConfigurationFactory {
     }
     /// Shorthand for ``sqlite(_:maxConnectionsPerEventLoop:connectionPoolTimeout:dataEncoder:dataDecoder:sqlLogLevel:)``.
     public static func sqlite(
-        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10), sqlLogLevel: Logger.Level?
+        _ config: SQLiteConfiguration = .memory, maxConnectionsPerEventLoop: Int = 1, connectionPoolTimeout: TimeAmount = .seconds(10),
+        sqlLogLevel: Logger.Level?
     ) -> Self {
         self.sqlite(config, connectionPoolTimeout: connectionPoolTimeout, dataEncoder: .init(), dataDecoder: .init(), sqlLogLevel: sqlLogLevel)
     }

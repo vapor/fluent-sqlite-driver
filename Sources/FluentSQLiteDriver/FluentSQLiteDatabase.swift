@@ -67,11 +67,11 @@ struct FluentSQLiteDatabase: Database, SQLDatabase, SQLiteDatabase {
         self.eventLoop.makeSucceededFuture(())
     }
 
-    func withConnection<T>(_ closure: @escaping @Sendable (any Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    func withConnection<T: Sendable>(_ closure: @escaping @Sendable (any Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.eventLoop.makeFutureWithTask { try await self.withConnection { try await closure($0).get() } }
     }
 
-    func withConnection<T>(_ closure: @escaping @Sendable (any Database) async throws -> T) async throws -> T {
+    func withConnection<T: Sendable>(_ closure: @escaping @Sendable (any Database) async throws -> T) async throws -> T {
         try await self.withConnection {
             try await closure(
                 FluentSQLiteDatabase(
@@ -85,11 +85,11 @@ struct FluentSQLiteDatabase: Database, SQLDatabase, SQLiteDatabase {
         }
     }
 
-    func transaction<T>(_ closure: @escaping @Sendable (any Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    func transaction<T: Sendable>(_ closure: @escaping @Sendable (any Database) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
         self.inTransaction ? closure(self) : self.eventLoop.makeFutureWithTask { try await self.transaction { try await closure($0).get() } }
     }
 
-    func transaction<T>(_ closure: @escaping @Sendable (any Database) async throws -> T) async throws -> T {
+    func transaction<T: Sendable>(_ closure: @escaping @Sendable (any Database) async throws -> T) async throws -> T {
         guard !self.inTransaction else {
             return try await closure(self)
         }
